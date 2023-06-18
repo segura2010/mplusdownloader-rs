@@ -91,9 +91,8 @@ impl MangaPlusClient {
                 let response = mangaplus_pb::Response::from_reader(&mut reader, &body).expect("cannot read Response ProtoBuf");
                 //println!("{:?}", response);
                 if let Some(result) = response.result {
-                    println!("{:?}", result);
-                    //return Ok(result.title_detail_view.unwrap()) // TODO: find a way to return
-                    //this shit
+                    //println!("{:?}", result);
+                    return Ok(result.title_detail_view.unwrap())
                 } else if let Some(error) = response.error {
                     return Err(error.debug.unwrap().to_string());
                 }
@@ -118,10 +117,10 @@ impl MangaPlusClient {
                 let response = mangaplus_pb::Response::from_reader(&mut reader, &body).expect("cannot read Response ProtoBuf");
                 //println!("{:?}", response);
                 if let Some(result) = response.to_owned().result {
-                    println!("{:?}", result);
+                    //println!("{:?}", result);
                     if let Some(viewer) = result.viewer {
                         //println!("{:?}", viewer);
-                        //return Ok(viewer); // TODO: find a way to return this shit
+                        return Ok(viewer);
                     }
                 } else if let Some(error) = response.error {
                     return Err(error.debug.unwrap().to_string());

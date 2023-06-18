@@ -9,19 +9,19 @@
 #![cfg_attr(rustfmt, rustfmt_skip)]
 
 
-use std::borrow::Cow;
 use quick_protobuf::{MessageInfo, MessageRead, MessageWrite, BytesReader, Writer, WriterBackend, Result};
+use core::convert::{TryFrom, TryInto};
 use quick_protobuf::sizeofs::*;
 use super::*;
 
 #[allow(clippy::derive_partial_eq_without_eq)]
 #[derive(Debug, Default, PartialEq, Clone)]
-pub struct Response<'a> {
-    pub result: Option<SuccessResult<'a>>,
-    pub error: Option<ErrorResult<'a>>,
+pub struct Response {
+    pub result: Option<SuccessResult>,
+    pub error: Option<ErrorResult>,
 }
 
-impl<'a> MessageRead<'a> for Response<'a> {
+impl<'a> MessageRead<'a> for Response {
     fn from_reader(r: &mut BytesReader, bytes: &'a [u8]) -> Result<Self> {
         let mut msg = Self::default();
         while !r.is_eof() {
@@ -36,7 +36,7 @@ impl<'a> MessageRead<'a> for Response<'a> {
     }
 }
 
-impl<'a> MessageWrite for Response<'a> {
+impl MessageWrite for Response {
     fn get_size(&self) -> usize {
         0
         + self.result.as_ref().map_or(0, |m| 1 + sizeof_len((m).get_size()))
@@ -50,15 +50,25 @@ impl<'a> MessageWrite for Response<'a> {
     }
 }
 
+
+            impl TryFrom<&[u8]> for Response {
+                type Error=quick_protobuf::Error;
+
+                fn try_from(buf: &[u8]) -> Result<Self> {
+                    let mut reader = BytesReader::from_bytes(&buf);
+                    Ok(Response::from_reader(&mut reader, &buf)?)
+                }
+            }
+            
 #[allow(clippy::derive_partial_eq_without_eq)]
 #[derive(Debug, Default, PartialEq, Clone)]
-pub struct SuccessResult<'a> {
-    pub registration_data: Option<RegistrationData<'a>>,
-    pub title_detail_view: Option<TitleDetailView<'a>>,
-    pub viewer: Option<MangaViewer<'a>>,
+pub struct SuccessResult {
+    pub registration_data: Option<RegistrationData>,
+    pub title_detail_view: Option<TitleDetailView>,
+    pub viewer: Option<MangaViewer>,
 }
 
-impl<'a> MessageRead<'a> for SuccessResult<'a> {
+impl<'a> MessageRead<'a> for SuccessResult {
     fn from_reader(r: &mut BytesReader, bytes: &'a [u8]) -> Result<Self> {
         let mut msg = Self::default();
         while !r.is_eof() {
@@ -74,7 +84,7 @@ impl<'a> MessageRead<'a> for SuccessResult<'a> {
     }
 }
 
-impl<'a> MessageWrite for SuccessResult<'a> {
+impl MessageWrite for SuccessResult {
     fn get_size(&self) -> usize {
         0
         + self.registration_data.as_ref().map_or(0, |m| 1 + sizeof_len((m).get_size()))
@@ -90,17 +100,27 @@ impl<'a> MessageWrite for SuccessResult<'a> {
     }
 }
 
+
+            impl TryFrom<&[u8]> for SuccessResult {
+                type Error=quick_protobuf::Error;
+
+                fn try_from(buf: &[u8]) -> Result<Self> {
+                    let mut reader = BytesReader::from_bytes(&buf);
+                    Ok(SuccessResult::from_reader(&mut reader, &buf)?)
+                }
+            }
+            
 #[allow(clippy::derive_partial_eq_without_eq)]
 #[derive(Debug, Default, PartialEq, Clone)]
-pub struct ErrorResult<'a> {
+pub struct ErrorResult {
     pub action: i32,
-    pub englishPopup: Option<OSDefault<'a>>,
-    pub spanishPopup: Option<OSDefault<'a>>,
-    pub popups: Vec<OSDefault<'a>>,
-    pub debug: Option<Cow<'a, str>>,
+    pub englishPopup: Option<OSDefault>,
+    pub spanishPopup: Option<OSDefault>,
+    pub popups: Vec<OSDefault>,
+    pub debug: Option<String>,
 }
 
-impl<'a> MessageRead<'a> for ErrorResult<'a> {
+impl<'a> MessageRead<'a> for ErrorResult {
     fn from_reader(r: &mut BytesReader, bytes: &'a [u8]) -> Result<Self> {
         let mut msg = Self::default();
         while !r.is_eof() {
@@ -109,7 +129,7 @@ impl<'a> MessageRead<'a> for ErrorResult<'a> {
                 Ok(18) => msg.englishPopup = Some(r.read_message::<OSDefault>(bytes)?),
                 Ok(26) => msg.spanishPopup = Some(r.read_message::<OSDefault>(bytes)?),
                 Ok(42) => msg.popups.push(r.read_message::<OSDefault>(bytes)?),
-                Ok(34) => msg.debug = Some(r.read_string(bytes).map(Cow::Borrowed)?),
+                Ok(34) => msg.debug = Some(r.read_string(bytes)?.to_owned()),
                 Ok(t) => { r.read_unknown(bytes, t)?; }
                 Err(e) => return Err(e),
             }
@@ -118,7 +138,7 @@ impl<'a> MessageRead<'a> for ErrorResult<'a> {
     }
 }
 
-impl<'a> MessageWrite for ErrorResult<'a> {
+impl MessageWrite for ErrorResult {
     fn get_size(&self) -> usize {
         0
         + 1 + sizeof_varint(*(&self.action) as u64)
@@ -138,18 +158,28 @@ impl<'a> MessageWrite for ErrorResult<'a> {
     }
 }
 
+
+            impl TryFrom<&[u8]> for ErrorResult {
+                type Error=quick_protobuf::Error;
+
+                fn try_from(buf: &[u8]) -> Result<Self> {
+                    let mut reader = BytesReader::from_bytes(&buf);
+                    Ok(ErrorResult::from_reader(&mut reader, &buf)?)
+                }
+            }
+            
 #[allow(clippy::derive_partial_eq_without_eq)]
 #[derive(Debug, Default, PartialEq, Clone)]
-pub struct RegistrationData<'a> {
-    pub device_secret: Cow<'a, str>,
+pub struct RegistrationData {
+    pub device_secret: String,
 }
 
-impl<'a> MessageRead<'a> for RegistrationData<'a> {
+impl<'a> MessageRead<'a> for RegistrationData {
     fn from_reader(r: &mut BytesReader, bytes: &'a [u8]) -> Result<Self> {
         let mut msg = Self::default();
         while !r.is_eof() {
             match r.next_tag(bytes) {
-                Ok(10) => msg.device_secret = r.read_string(bytes).map(Cow::Borrowed)?,
+                Ok(10) => msg.device_secret = r.read_string(bytes)?.to_owned(),
                 Ok(t) => { r.read_unknown(bytes, t)?; }
                 Err(e) => return Err(e),
             }
@@ -158,7 +188,7 @@ impl<'a> MessageRead<'a> for RegistrationData<'a> {
     }
 }
 
-impl<'a> MessageWrite for RegistrationData<'a> {
+impl MessageWrite for RegistrationData {
     fn get_size(&self) -> usize {
         0
         + 1 + sizeof_len((&self.device_secret).len())
@@ -170,15 +200,25 @@ impl<'a> MessageWrite for RegistrationData<'a> {
     }
 }
 
+
+            impl TryFrom<&[u8]> for RegistrationData {
+                type Error=quick_protobuf::Error;
+
+                fn try_from(buf: &[u8]) -> Result<Self> {
+                    let mut reader = BytesReader::from_bytes(&buf);
+                    Ok(RegistrationData::from_reader(&mut reader, &buf)?)
+                }
+            }
+            
 #[allow(clippy::derive_partial_eq_without_eq)]
 #[derive(Debug, Default, PartialEq, Clone)]
-pub struct ChapterListGroup<'a> {
-    pub first_chapter_list: Vec<Chapter<'a>>,
-    pub mid_chapter_list: Vec<Chapter<'a>>,
-    pub last_chapter_list: Vec<Chapter<'a>>,
+pub struct ChapterListGroup {
+    pub first_chapter_list: Vec<Chapter>,
+    pub mid_chapter_list: Vec<Chapter>,
+    pub last_chapter_list: Vec<Chapter>,
 }
 
-impl<'a> MessageRead<'a> for ChapterListGroup<'a> {
+impl<'a> MessageRead<'a> for ChapterListGroup {
     fn from_reader(r: &mut BytesReader, bytes: &'a [u8]) -> Result<Self> {
         let mut msg = Self::default();
         while !r.is_eof() {
@@ -194,7 +234,7 @@ impl<'a> MessageRead<'a> for ChapterListGroup<'a> {
     }
 }
 
-impl<'a> MessageWrite for ChapterListGroup<'a> {
+impl MessageWrite for ChapterListGroup {
     fn get_size(&self) -> usize {
         0
         + self.first_chapter_list.iter().map(|s| 1 + sizeof_len((s).get_size())).sum::<usize>()
@@ -210,43 +250,53 @@ impl<'a> MessageWrite for ChapterListGroup<'a> {
     }
 }
 
+
+            impl TryFrom<&[u8]> for ChapterListGroup {
+                type Error=quick_protobuf::Error;
+
+                fn try_from(buf: &[u8]) -> Result<Self> {
+                    let mut reader = BytesReader::from_bytes(&buf);
+                    Ok(ChapterListGroup::from_reader(&mut reader, &buf)?)
+                }
+            }
+            
 #[allow(clippy::derive_partial_eq_without_eq)]
 #[derive(Debug, Default, PartialEq, Clone)]
-pub struct TitleDetailView<'a> {
-    pub title: Title<'a>,
-    pub title_image_url: Cow<'a, str>,
-    pub overview: Cow<'a, str>,
-    pub background_image_url: Cow<'a, str>,
+pub struct TitleDetailView {
+    pub title: Title,
+    pub title_image_url: String,
+    pub overview: String,
+    pub background_image_url: String,
     pub next_timestamp: Option<u32>,
     pub update_timing: Option<i32>,
-    pub viewing_period_description: Option<Cow<'a, str>>,
-    pub non_appearance_info: Option<Cow<'a, str>>,
-    pub first_chapter_list: Vec<Chapter<'a>>,
-    pub last_chapter_list: Vec<Chapter<'a>>,
-    pub banners: Vec<Banner<'a>>,
-    pub recommended_title_list: Vec<Title<'a>>,
-    pub sns: Option<SNS<'a>>,
+    pub viewing_period_description: Option<String>,
+    pub non_appearance_info: Option<String>,
+    pub first_chapter_list: Vec<Chapter>,
+    pub last_chapter_list: Vec<Chapter>,
+    pub banners: Vec<Banner>,
+    pub recommended_title_list: Vec<Title>,
+    pub sns: Option<SNS>,
     pub is_simul_released: bool,
     pub is_subscribed: Option<bool>,
     pub rating: Option<i32>,
     pub chapters_descending: Option<bool>,
     pub number_of_views: Option<u32>,
-    pub chapter_list_group: ChapterListGroup<'a>,
+    pub chapter_list_group: ChapterListGroup,
 }
 
-impl<'a> MessageRead<'a> for TitleDetailView<'a> {
+impl<'a> MessageRead<'a> for TitleDetailView {
     fn from_reader(r: &mut BytesReader, bytes: &'a [u8]) -> Result<Self> {
         let mut msg = Self::default();
         while !r.is_eof() {
             match r.next_tag(bytes) {
                 Ok(10) => msg.title = r.read_message::<Title>(bytes)?,
-                Ok(18) => msg.title_image_url = r.read_string(bytes).map(Cow::Borrowed)?,
-                Ok(26) => msg.overview = r.read_string(bytes).map(Cow::Borrowed)?,
-                Ok(34) => msg.background_image_url = r.read_string(bytes).map(Cow::Borrowed)?,
+                Ok(18) => msg.title_image_url = r.read_string(bytes)?.to_owned(),
+                Ok(26) => msg.overview = r.read_string(bytes)?.to_owned(),
+                Ok(34) => msg.background_image_url = r.read_string(bytes)?.to_owned(),
                 Ok(40) => msg.next_timestamp = Some(r.read_uint32(bytes)?),
                 Ok(48) => msg.update_timing = Some(r.read_int32(bytes)?),
-                Ok(58) => msg.viewing_period_description = Some(r.read_string(bytes).map(Cow::Borrowed)?),
-                Ok(66) => msg.non_appearance_info = Some(r.read_string(bytes).map(Cow::Borrowed)?),
+                Ok(58) => msg.viewing_period_description = Some(r.read_string(bytes)?.to_owned()),
+                Ok(66) => msg.non_appearance_info = Some(r.read_string(bytes)?.to_owned()),
                 Ok(74) => msg.first_chapter_list.push(r.read_message::<Chapter>(bytes)?),
                 Ok(82) => msg.last_chapter_list.push(r.read_message::<Chapter>(bytes)?),
                 Ok(90) => msg.banners.push(r.read_message::<Banner>(bytes)?),
@@ -266,7 +316,7 @@ impl<'a> MessageRead<'a> for TitleDetailView<'a> {
     }
 }
 
-impl<'a> MessageWrite for TitleDetailView<'a> {
+impl MessageWrite for TitleDetailView {
     fn get_size(&self) -> usize {
         0
         + 1 + sizeof_len((&self.title).get_size())
@@ -314,24 +364,34 @@ impl<'a> MessageWrite for TitleDetailView<'a> {
     }
 }
 
+
+            impl TryFrom<&[u8]> for TitleDetailView {
+                type Error=quick_protobuf::Error;
+
+                fn try_from(buf: &[u8]) -> Result<Self> {
+                    let mut reader = BytesReader::from_bytes(&buf);
+                    Ok(TitleDetailView::from_reader(&mut reader, &buf)?)
+                }
+            }
+            
 #[allow(clippy::derive_partial_eq_without_eq)]
 #[derive(Debug, Default, PartialEq, Clone)]
-pub struct MangaViewer<'a> {
-    pub pages: Vec<Page<'a>>,
+pub struct MangaViewer {
+    pub pages: Vec<Page>,
     pub chapter_id: Option<u32>,
-    pub chapters: Vec<Chapter<'a>>,
-    pub sns: Option<SNS<'a>>,
-    pub title: Option<Cow<'a, str>>,
-    pub chapter_name: Option<Cow<'a, str>>,
+    pub chapters: Vec<Chapter>,
+    pub sns: Option<SNS>,
+    pub title: Option<String>,
+    pub chapter_name: Option<String>,
     pub num_comments: Option<u32>,
     pub vertical_only: Option<bool>,
     pub title_id: Option<u32>,
     pub start_from_right: Option<bool>,
-    pub region: Option<Cow<'a, str>>,
+    pub region: Option<String>,
     pub horizontal_only: Option<bool>,
 }
 
-impl<'a> MessageRead<'a> for MangaViewer<'a> {
+impl<'a> MessageRead<'a> for MangaViewer {
     fn from_reader(r: &mut BytesReader, bytes: &'a [u8]) -> Result<Self> {
         let mut msg = Self::default();
         while !r.is_eof() {
@@ -340,13 +400,13 @@ impl<'a> MessageRead<'a> for MangaViewer<'a> {
                 Ok(16) => msg.chapter_id = Some(r.read_uint32(bytes)?),
                 Ok(26) => msg.chapters.push(r.read_message::<Chapter>(bytes)?),
                 Ok(34) => msg.sns = Some(r.read_message::<SNS>(bytes)?),
-                Ok(42) => msg.title = Some(r.read_string(bytes).map(Cow::Borrowed)?),
-                Ok(50) => msg.chapter_name = Some(r.read_string(bytes).map(Cow::Borrowed)?),
+                Ok(42) => msg.title = Some(r.read_string(bytes)?.to_owned()),
+                Ok(50) => msg.chapter_name = Some(r.read_string(bytes)?.to_owned()),
                 Ok(56) => msg.num_comments = Some(r.read_uint32(bytes)?),
                 Ok(64) => msg.vertical_only = Some(r.read_bool(bytes)?),
                 Ok(72) => msg.title_id = Some(r.read_uint32(bytes)?),
                 Ok(80) => msg.start_from_right = Some(r.read_bool(bytes)?),
-                Ok(90) => msg.region = Some(r.read_string(bytes).map(Cow::Borrowed)?),
+                Ok(90) => msg.region = Some(r.read_string(bytes)?.to_owned()),
                 Ok(96) => msg.horizontal_only = Some(r.read_bool(bytes)?),
                 Ok(t) => { r.read_unknown(bytes, t)?; }
                 Err(e) => return Err(e),
@@ -356,7 +416,7 @@ impl<'a> MessageRead<'a> for MangaViewer<'a> {
     }
 }
 
-impl<'a> MessageWrite for MangaViewer<'a> {
+impl MessageWrite for MangaViewer {
     fn get_size(&self) -> usize {
         0
         + self.pages.iter().map(|s| 1 + sizeof_len((s).get_size())).sum::<usize>()
@@ -390,14 +450,24 @@ impl<'a> MessageWrite for MangaViewer<'a> {
     }
 }
 
+
+            impl TryFrom<&[u8]> for MangaViewer {
+                type Error=quick_protobuf::Error;
+
+                fn try_from(buf: &[u8]) -> Result<Self> {
+                    let mut reader = BytesReader::from_bytes(&buf);
+                    Ok(MangaViewer::from_reader(&mut reader, &buf)?)
+                }
+            }
+            
 #[allow(clippy::derive_partial_eq_without_eq)]
 #[derive(Debug, Default, PartialEq, Clone)]
-pub struct Chapter<'a> {
+pub struct Chapter {
     pub title_id: u32,
     pub chapter_id: u32,
-    pub name: Cow<'a, str>,
-    pub subtitle: Cow<'a, str>,
-    pub thumbail_url: Cow<'a, str>,
+    pub name: String,
+    pub subtitle: String,
+    pub thumbail_url: String,
     pub start_timestamp: u32,
     pub end_timestamp: u32,
     pub viewed: Option<bool>,
@@ -407,16 +477,16 @@ pub struct Chapter<'a> {
     pub chapter_ticket_end_time: Option<u32>,
 }
 
-impl<'a> MessageRead<'a> for Chapter<'a> {
+impl<'a> MessageRead<'a> for Chapter {
     fn from_reader(r: &mut BytesReader, bytes: &'a [u8]) -> Result<Self> {
         let mut msg = Self::default();
         while !r.is_eof() {
             match r.next_tag(bytes) {
                 Ok(8) => msg.title_id = r.read_uint32(bytes)?,
                 Ok(16) => msg.chapter_id = r.read_uint32(bytes)?,
-                Ok(26) => msg.name = r.read_string(bytes).map(Cow::Borrowed)?,
-                Ok(34) => msg.subtitle = r.read_string(bytes).map(Cow::Borrowed)?,
-                Ok(42) => msg.thumbail_url = r.read_string(bytes).map(Cow::Borrowed)?,
+                Ok(26) => msg.name = r.read_string(bytes)?.to_owned(),
+                Ok(34) => msg.subtitle = r.read_string(bytes)?.to_owned(),
+                Ok(42) => msg.thumbail_url = r.read_string(bytes)?.to_owned(),
                 Ok(48) => msg.start_timestamp = r.read_uint32(bytes)?,
                 Ok(56) => msg.end_timestamp = r.read_uint32(bytes)?,
                 Ok(64) => msg.viewed = Some(r.read_bool(bytes)?),
@@ -432,7 +502,7 @@ impl<'a> MessageRead<'a> for Chapter<'a> {
     }
 }
 
-impl<'a> MessageWrite for Chapter<'a> {
+impl MessageWrite for Chapter {
     fn get_size(&self) -> usize {
         0
         + 1 + sizeof_varint(*(&self.title_id) as u64)
@@ -466,20 +536,30 @@ impl<'a> MessageWrite for Chapter<'a> {
     }
 }
 
+
+            impl TryFrom<&[u8]> for Chapter {
+                type Error=quick_protobuf::Error;
+
+                fn try_from(buf: &[u8]) -> Result<Self> {
+                    let mut reader = BytesReader::from_bytes(&buf);
+                    Ok(Chapter::from_reader(&mut reader, &buf)?)
+                }
+            }
+            
 #[allow(clippy::derive_partial_eq_without_eq)]
 #[derive(Debug, Default, PartialEq, Clone)]
-pub struct SNS<'a> {
-    pub body: Cow<'a, str>,
-    pub url: Cow<'a, str>,
+pub struct SNS {
+    pub body: String,
+    pub url: String,
 }
 
-impl<'a> MessageRead<'a> for SNS<'a> {
+impl<'a> MessageRead<'a> for SNS {
     fn from_reader(r: &mut BytesReader, bytes: &'a [u8]) -> Result<Self> {
         let mut msg = Self::default();
         while !r.is_eof() {
             match r.next_tag(bytes) {
-                Ok(10) => msg.body = r.read_string(bytes).map(Cow::Borrowed)?,
-                Ok(18) => msg.url = r.read_string(bytes).map(Cow::Borrowed)?,
+                Ok(10) => msg.body = r.read_string(bytes)?.to_owned(),
+                Ok(18) => msg.url = r.read_string(bytes)?.to_owned(),
                 Ok(t) => { r.read_unknown(bytes, t)?; }
                 Err(e) => return Err(e),
             }
@@ -488,7 +568,7 @@ impl<'a> MessageRead<'a> for SNS<'a> {
     }
 }
 
-impl<'a> MessageWrite for SNS<'a> {
+impl MessageWrite for SNS {
     fn get_size(&self) -> usize {
         0
         + 1 + sizeof_len((&self.body).len())
@@ -502,17 +582,27 @@ impl<'a> MessageWrite for SNS<'a> {
     }
 }
 
+
+            impl TryFrom<&[u8]> for SNS {
+                type Error=quick_protobuf::Error;
+
+                fn try_from(buf: &[u8]) -> Result<Self> {
+                    let mut reader = BytesReader::from_bytes(&buf);
+                    Ok(SNS::from_reader(&mut reader, &buf)?)
+                }
+            }
+            
 #[allow(clippy::derive_partial_eq_without_eq)]
 #[derive(Debug, Default, PartialEq, Clone)]
-pub struct Page<'a> {
-    pub page: Option<MangaPage<'a>>,
-    pub banner_list: Option<BannerList<'a>>,
-    pub insert_banner_list: Option<BannerList<'a>>,
-    pub last_page: Option<LastPage<'a>>,
-    pub ads: Option<AdNetworkList<'a>>,
+pub struct Page {
+    pub page: Option<MangaPage>,
+    pub banner_list: Option<BannerList>,
+    pub insert_banner_list: Option<BannerList>,
+    pub last_page: Option<LastPage>,
+    pub ads: Option<AdNetworkList>,
 }
 
-impl<'a> MessageRead<'a> for Page<'a> {
+impl<'a> MessageRead<'a> for Page {
     fn from_reader(r: &mut BytesReader, bytes: &'a [u8]) -> Result<Self> {
         let mut msg = Self::default();
         while !r.is_eof() {
@@ -530,7 +620,7 @@ impl<'a> MessageRead<'a> for Page<'a> {
     }
 }
 
-impl<'a> MessageWrite for Page<'a> {
+impl MessageWrite for Page {
     fn get_size(&self) -> usize {
         0
         + self.page.as_ref().map_or(0, |m| 1 + sizeof_len((m).get_size()))
@@ -550,26 +640,36 @@ impl<'a> MessageWrite for Page<'a> {
     }
 }
 
+
+            impl TryFrom<&[u8]> for Page {
+                type Error=quick_protobuf::Error;
+
+                fn try_from(buf: &[u8]) -> Result<Self> {
+                    let mut reader = BytesReader::from_bytes(&buf);
+                    Ok(Page::from_reader(&mut reader, &buf)?)
+                }
+            }
+            
 #[allow(clippy::derive_partial_eq_without_eq)]
 #[derive(Debug, Default, PartialEq, Clone)]
-pub struct MangaPage<'a> {
-    pub image_url: Option<Cow<'a, str>>,
+pub struct MangaPage {
+    pub image_url: Option<String>,
     pub width: Option<u32>,
     pub height: Option<u32>,
     pub type_pb: Option<i32>,
-    pub encryption_key: Option<Cow<'a, str>>,
+    pub encryption_key: Option<String>,
 }
 
-impl<'a> MessageRead<'a> for MangaPage<'a> {
+impl<'a> MessageRead<'a> for MangaPage {
     fn from_reader(r: &mut BytesReader, bytes: &'a [u8]) -> Result<Self> {
         let mut msg = Self::default();
         while !r.is_eof() {
             match r.next_tag(bytes) {
-                Ok(10) => msg.image_url = Some(r.read_string(bytes).map(Cow::Borrowed)?),
+                Ok(10) => msg.image_url = Some(r.read_string(bytes)?.to_owned()),
                 Ok(16) => msg.width = Some(r.read_uint32(bytes)?),
                 Ok(24) => msg.height = Some(r.read_uint32(bytes)?),
                 Ok(32) => msg.type_pb = Some(r.read_int32(bytes)?),
-                Ok(42) => msg.encryption_key = Some(r.read_string(bytes).map(Cow::Borrowed)?),
+                Ok(42) => msg.encryption_key = Some(r.read_string(bytes)?.to_owned()),
                 Ok(t) => { r.read_unknown(bytes, t)?; }
                 Err(e) => return Err(e),
             }
@@ -578,7 +678,7 @@ impl<'a> MessageRead<'a> for MangaPage<'a> {
     }
 }
 
-impl<'a> MessageWrite for MangaPage<'a> {
+impl MessageWrite for MangaPage {
     fn get_size(&self) -> usize {
         0
         + self.image_url.as_ref().map_or(0, |m| 1 + sizeof_len((m).len()))
@@ -598,19 +698,29 @@ impl<'a> MessageWrite for MangaPage<'a> {
     }
 }
 
+
+            impl TryFrom<&[u8]> for MangaPage {
+                type Error=quick_protobuf::Error;
+
+                fn try_from(buf: &[u8]) -> Result<Self> {
+                    let mut reader = BytesReader::from_bytes(&buf);
+                    Ok(MangaPage::from_reader(&mut reader, &buf)?)
+                }
+            }
+            
 #[allow(clippy::derive_partial_eq_without_eq)]
 #[derive(Debug, Default, PartialEq, Clone)]
-pub struct BannerList<'a> {
-    pub title: Option<Cow<'a, str>>,
-    pub banner: Vec<Banner<'a>>,
+pub struct BannerList {
+    pub title: Option<String>,
+    pub banner: Vec<Banner>,
 }
 
-impl<'a> MessageRead<'a> for BannerList<'a> {
+impl<'a> MessageRead<'a> for BannerList {
     fn from_reader(r: &mut BytesReader, bytes: &'a [u8]) -> Result<Self> {
         let mut msg = Self::default();
         while !r.is_eof() {
             match r.next_tag(bytes) {
-                Ok(10) => msg.title = Some(r.read_string(bytes).map(Cow::Borrowed)?),
+                Ok(10) => msg.title = Some(r.read_string(bytes)?.to_owned()),
                 Ok(18) => msg.banner.push(r.read_message::<Banner>(bytes)?),
                 Ok(t) => { r.read_unknown(bytes, t)?; }
                 Err(e) => return Err(e),
@@ -620,7 +730,7 @@ impl<'a> MessageRead<'a> for BannerList<'a> {
     }
 }
 
-impl<'a> MessageWrite for BannerList<'a> {
+impl MessageWrite for BannerList {
     fn get_size(&self) -> usize {
         0
         + self.title.as_ref().map_or(0, |m| 1 + sizeof_len((m).len()))
@@ -634,20 +744,30 @@ impl<'a> MessageWrite for BannerList<'a> {
     }
 }
 
+
+            impl TryFrom<&[u8]> for BannerList {
+                type Error=quick_protobuf::Error;
+
+                fn try_from(buf: &[u8]) -> Result<Self> {
+                    let mut reader = BytesReader::from_bytes(&buf);
+                    Ok(BannerList::from_reader(&mut reader, &buf)?)
+                }
+            }
+            
 #[allow(clippy::derive_partial_eq_without_eq)]
 #[derive(Debug, Default, PartialEq, Clone)]
-pub struct Banner<'a> {
-    pub image_url: Cow<'a, str>,
-    pub action: TransitionAction<'a>,
+pub struct Banner {
+    pub image_url: String,
+    pub action: TransitionAction,
     pub id: u32,
 }
 
-impl<'a> MessageRead<'a> for Banner<'a> {
+impl<'a> MessageRead<'a> for Banner {
     fn from_reader(r: &mut BytesReader, bytes: &'a [u8]) -> Result<Self> {
         let mut msg = Self::default();
         while !r.is_eof() {
             match r.next_tag(bytes) {
-                Ok(10) => msg.image_url = r.read_string(bytes).map(Cow::Borrowed)?,
+                Ok(10) => msg.image_url = r.read_string(bytes)?.to_owned(),
                 Ok(18) => msg.action = r.read_message::<TransitionAction>(bytes)?,
                 Ok(24) => msg.id = r.read_uint32(bytes)?,
                 Ok(t) => { r.read_unknown(bytes, t)?; }
@@ -658,7 +778,7 @@ impl<'a> MessageRead<'a> for Banner<'a> {
     }
 }
 
-impl<'a> MessageWrite for Banner<'a> {
+impl MessageWrite for Banner {
     fn get_size(&self) -> usize {
         0
         + 1 + sizeof_len((&self.image_url).len())
@@ -674,20 +794,30 @@ impl<'a> MessageWrite for Banner<'a> {
     }
 }
 
+
+            impl TryFrom<&[u8]> for Banner {
+                type Error=quick_protobuf::Error;
+
+                fn try_from(buf: &[u8]) -> Result<Self> {
+                    let mut reader = BytesReader::from_bytes(&buf);
+                    Ok(Banner::from_reader(&mut reader, &buf)?)
+                }
+            }
+            
 #[allow(clippy::derive_partial_eq_without_eq)]
 #[derive(Debug, Default, PartialEq, Clone)]
-pub struct TransitionAction<'a> {
+pub struct TransitionAction {
     pub method: Option<i32>,
-    pub url: Option<Cow<'a, str>>,
+    pub url: Option<String>,
 }
 
-impl<'a> MessageRead<'a> for TransitionAction<'a> {
+impl<'a> MessageRead<'a> for TransitionAction {
     fn from_reader(r: &mut BytesReader, bytes: &'a [u8]) -> Result<Self> {
         let mut msg = Self::default();
         while !r.is_eof() {
             match r.next_tag(bytes) {
                 Ok(8) => msg.method = Some(r.read_int32(bytes)?),
-                Ok(18) => msg.url = Some(r.read_string(bytes).map(Cow::Borrowed)?),
+                Ok(18) => msg.url = Some(r.read_string(bytes)?.to_owned()),
                 Ok(t) => { r.read_unknown(bytes, t)?; }
                 Err(e) => return Err(e),
             }
@@ -696,7 +826,7 @@ impl<'a> MessageRead<'a> for TransitionAction<'a> {
     }
 }
 
-impl<'a> MessageWrite for TransitionAction<'a> {
+impl MessageWrite for TransitionAction {
     fn get_size(&self) -> usize {
         0
         + self.method.as_ref().map_or(0, |m| 1 + sizeof_varint(*(m) as u64))
@@ -710,27 +840,37 @@ impl<'a> MessageWrite for TransitionAction<'a> {
     }
 }
 
+
+            impl TryFrom<&[u8]> for TransitionAction {
+                type Error=quick_protobuf::Error;
+
+                fn try_from(buf: &[u8]) -> Result<Self> {
+                    let mut reader = BytesReader::from_bytes(&buf);
+                    Ok(TransitionAction::from_reader(&mut reader, &buf)?)
+                }
+            }
+            
 #[allow(clippy::derive_partial_eq_without_eq)]
 #[derive(Debug, Default, PartialEq, Clone)]
-pub struct LastPage<'a> {
-    pub current_chapter: Chapter<'a>,
-    pub next_chapter: Option<Chapter<'a>>,
-    pub top_comments: Vec<Comment<'a>>,
+pub struct LastPage {
+    pub current_chapter: Chapter,
+    pub next_chapter: Option<Chapter>,
+    pub top_comments: Vec<Comment>,
     pub is_subscribed: Option<bool>,
     pub next_timestamp: Option<u32>,
     pub chapter_type: Option<i32>,
-    pub ads: Option<AdNetworkList<'a>>,
-    pub popup: Option<Popup<'a>>,
-    pub banner: Vec<Banner<'a>>,
-    pub titles: Vec<Title<'a>>,
-    pub publisher_banner: Option<Banner<'a>>,
+    pub ads: Option<AdNetworkList>,
+    pub popup: Option<Popup>,
+    pub banner: Vec<Banner>,
+    pub titles: Vec<Title>,
+    pub publisher_banner: Option<Banner>,
     pub user_tickets: Option<UserTickets>,
     pub is_next_chapter_read: Option<bool>,
     pub is_next_chapter_one_time_free: Option<bool>,
-    pub free_view_dialogue: Option<FreeViewDialogue<'a>>,
+    pub free_view_dialogue: Option<FreeViewDialogue>,
 }
 
-impl<'a> MessageRead<'a> for LastPage<'a> {
+impl<'a> MessageRead<'a> for LastPage {
     fn from_reader(r: &mut BytesReader, bytes: &'a [u8]) -> Result<Self> {
         let mut msg = Self::default();
         while !r.is_eof() {
@@ -758,7 +898,7 @@ impl<'a> MessageRead<'a> for LastPage<'a> {
     }
 }
 
-impl<'a> MessageWrite for LastPage<'a> {
+impl MessageWrite for LastPage {
     fn get_size(&self) -> usize {
         0
         + 1 + sizeof_len((&self.current_chapter).get_size())
@@ -798,33 +938,43 @@ impl<'a> MessageWrite for LastPage<'a> {
     }
 }
 
+
+            impl TryFrom<&[u8]> for LastPage {
+                type Error=quick_protobuf::Error;
+
+                fn try_from(buf: &[u8]) -> Result<Self> {
+                    let mut reader = BytesReader::from_bytes(&buf);
+                    Ok(LastPage::from_reader(&mut reader, &buf)?)
+                }
+            }
+            
 #[allow(clippy::derive_partial_eq_without_eq)]
 #[derive(Debug, Default, PartialEq, Clone)]
-pub struct Comment<'a> {
+pub struct Comment {
     pub id: u32,
     pub index: Option<u32>,
-    pub username: Cow<'a, str>,
-    pub icon: Option<Cow<'a, str>>,
+    pub username: String,
+    pub icon: Option<String>,
     pub is_my_comment: Option<bool>,
     pub liked: Option<bool>,
     pub likes: u32,
-    pub body: Cow<'a, str>,
+    pub body: String,
     pub created: u32,
 }
 
-impl<'a> MessageRead<'a> for Comment<'a> {
+impl<'a> MessageRead<'a> for Comment {
     fn from_reader(r: &mut BytesReader, bytes: &'a [u8]) -> Result<Self> {
         let mut msg = Self::default();
         while !r.is_eof() {
             match r.next_tag(bytes) {
                 Ok(8) => msg.id = r.read_uint32(bytes)?,
                 Ok(16) => msg.index = Some(r.read_uint32(bytes)?),
-                Ok(26) => msg.username = r.read_string(bytes).map(Cow::Borrowed)?,
-                Ok(34) => msg.icon = Some(r.read_string(bytes).map(Cow::Borrowed)?),
+                Ok(26) => msg.username = r.read_string(bytes)?.to_owned(),
+                Ok(34) => msg.icon = Some(r.read_string(bytes)?.to_owned()),
                 Ok(48) => msg.is_my_comment = Some(r.read_bool(bytes)?),
                 Ok(56) => msg.liked = Some(r.read_bool(bytes)?),
                 Ok(72) => msg.likes = r.read_uint32(bytes)?,
-                Ok(82) => msg.body = r.read_string(bytes).map(Cow::Borrowed)?,
+                Ok(82) => msg.body = r.read_string(bytes)?.to_owned(),
                 Ok(88) => msg.created = r.read_uint32(bytes)?,
                 Ok(t) => { r.read_unknown(bytes, t)?; }
                 Err(e) => return Err(e),
@@ -834,7 +984,7 @@ impl<'a> MessageRead<'a> for Comment<'a> {
     }
 }
 
-impl<'a> MessageWrite for Comment<'a> {
+impl MessageWrite for Comment {
     fn get_size(&self) -> usize {
         0
         + 1 + sizeof_varint(*(&self.id) as u64)
@@ -862,17 +1012,27 @@ impl<'a> MessageWrite for Comment<'a> {
     }
 }
 
+
+            impl TryFrom<&[u8]> for Comment {
+                type Error=quick_protobuf::Error;
+
+                fn try_from(buf: &[u8]) -> Result<Self> {
+                    let mut reader = BytesReader::from_bytes(&buf);
+                    Ok(Comment::from_reader(&mut reader, &buf)?)
+                }
+            }
+            
 #[allow(clippy::derive_partial_eq_without_eq)]
 #[derive(Debug, Default, PartialEq, Clone)]
-pub struct Popup<'a> {
+pub struct Popup {
     pub id: u32,
-    pub os_def: OSDefault<'a>,
-    pub app_def: AppDefault<'a>,
-    pub movie_reward: MovieReward<'a>,
-    pub one_image: OneImage<'a>,
+    pub os_def: OSDefault,
+    pub app_def: AppDefault,
+    pub movie_reward: MovieReward,
+    pub one_image: OneImage,
 }
 
-impl<'a> MessageRead<'a> for Popup<'a> {
+impl<'a> MessageRead<'a> for Popup {
     fn from_reader(r: &mut BytesReader, bytes: &'a [u8]) -> Result<Self> {
         let mut msg = Self::default();
         while !r.is_eof() {
@@ -890,7 +1050,7 @@ impl<'a> MessageRead<'a> for Popup<'a> {
     }
 }
 
-impl<'a> MessageWrite for Popup<'a> {
+impl MessageWrite for Popup {
     fn get_size(&self) -> usize {
         0
         + 1 + sizeof_varint(*(&self.id) as u64)
@@ -910,24 +1070,34 @@ impl<'a> MessageWrite for Popup<'a> {
     }
 }
 
+
+            impl TryFrom<&[u8]> for Popup {
+                type Error=quick_protobuf::Error;
+
+                fn try_from(buf: &[u8]) -> Result<Self> {
+                    let mut reader = BytesReader::from_bytes(&buf);
+                    Ok(Popup::from_reader(&mut reader, &buf)?)
+                }
+            }
+            
 #[allow(clippy::derive_partial_eq_without_eq)]
 #[derive(Debug, Default, PartialEq, Clone)]
-pub struct OSDefault<'a> {
-    pub subject: Cow<'a, str>,
-    pub body: Cow<'a, str>,
-    pub ok_button: Option<Button<'a>>,
-    pub neutral_button: Option<Button<'a>>,
-    pub cancel_button: Option<Button<'a>>,
+pub struct OSDefault {
+    pub subject: String,
+    pub body: String,
+    pub ok_button: Option<Button>,
+    pub neutral_button: Option<Button>,
+    pub cancel_button: Option<Button>,
     pub language: Option<i32>,
 }
 
-impl<'a> MessageRead<'a> for OSDefault<'a> {
+impl<'a> MessageRead<'a> for OSDefault {
     fn from_reader(r: &mut BytesReader, bytes: &'a [u8]) -> Result<Self> {
         let mut msg = Self::default();
         while !r.is_eof() {
             match r.next_tag(bytes) {
-                Ok(10) => msg.subject = r.read_string(bytes).map(Cow::Borrowed)?,
-                Ok(18) => msg.body = r.read_string(bytes).map(Cow::Borrowed)?,
+                Ok(10) => msg.subject = r.read_string(bytes)?.to_owned(),
+                Ok(18) => msg.body = r.read_string(bytes)?.to_owned(),
                 Ok(26) => msg.ok_button = Some(r.read_message::<Button>(bytes)?),
                 Ok(34) => msg.neutral_button = Some(r.read_message::<Button>(bytes)?),
                 Ok(42) => msg.cancel_button = Some(r.read_message::<Button>(bytes)?),
@@ -940,7 +1110,7 @@ impl<'a> MessageRead<'a> for OSDefault<'a> {
     }
 }
 
-impl<'a> MessageWrite for OSDefault<'a> {
+impl MessageWrite for OSDefault {
     fn get_size(&self) -> usize {
         0
         + 1 + sizeof_len((&self.subject).len())
@@ -962,19 +1132,29 @@ impl<'a> MessageWrite for OSDefault<'a> {
     }
 }
 
+
+            impl TryFrom<&[u8]> for OSDefault {
+                type Error=quick_protobuf::Error;
+
+                fn try_from(buf: &[u8]) -> Result<Self> {
+                    let mut reader = BytesReader::from_bytes(&buf);
+                    Ok(OSDefault::from_reader(&mut reader, &buf)?)
+                }
+            }
+            
 #[allow(clippy::derive_partial_eq_without_eq)]
 #[derive(Debug, Default, PartialEq, Clone)]
-pub struct Button<'a> {
-    pub text: Cow<'a, str>,
-    pub action: Option<TransitionAction<'a>>,
+pub struct Button {
+    pub text: String,
+    pub action: Option<TransitionAction>,
 }
 
-impl<'a> MessageRead<'a> for Button<'a> {
+impl<'a> MessageRead<'a> for Button {
     fn from_reader(r: &mut BytesReader, bytes: &'a [u8]) -> Result<Self> {
         let mut msg = Self::default();
         while !r.is_eof() {
             match r.next_tag(bytes) {
-                Ok(10) => msg.text = r.read_string(bytes).map(Cow::Borrowed)?,
+                Ok(10) => msg.text = r.read_string(bytes)?.to_owned(),
                 Ok(18) => msg.action = Some(r.read_message::<TransitionAction>(bytes)?),
                 Ok(t) => { r.read_unknown(bytes, t)?; }
                 Err(e) => return Err(e),
@@ -984,7 +1164,7 @@ impl<'a> MessageRead<'a> for Button<'a> {
     }
 }
 
-impl<'a> MessageWrite for Button<'a> {
+impl MessageWrite for Button {
     fn get_size(&self) -> usize {
         0
         + 1 + sizeof_len((&self.text).len())
@@ -998,24 +1178,34 @@ impl<'a> MessageWrite for Button<'a> {
     }
 }
 
+
+            impl TryFrom<&[u8]> for Button {
+                type Error=quick_protobuf::Error;
+
+                fn try_from(buf: &[u8]) -> Result<Self> {
+                    let mut reader = BytesReader::from_bytes(&buf);
+                    Ok(Button::from_reader(&mut reader, &buf)?)
+                }
+            }
+            
 #[allow(clippy::derive_partial_eq_without_eq)]
 #[derive(Debug, Default, PartialEq, Clone)]
-pub struct AppDefault<'a> {
-    pub subject: Cow<'a, str>,
-    pub body: Cow<'a, str>,
-    pub action: Option<TransitionAction<'a>>,
-    pub image_url: Option<Cow<'a, str>>,
+pub struct AppDefault {
+    pub subject: String,
+    pub body: String,
+    pub action: Option<TransitionAction>,
+    pub image_url: Option<String>,
 }
 
-impl<'a> MessageRead<'a> for AppDefault<'a> {
+impl<'a> MessageRead<'a> for AppDefault {
     fn from_reader(r: &mut BytesReader, bytes: &'a [u8]) -> Result<Self> {
         let mut msg = Self::default();
         while !r.is_eof() {
             match r.next_tag(bytes) {
-                Ok(10) => msg.subject = r.read_string(bytes).map(Cow::Borrowed)?,
-                Ok(18) => msg.body = r.read_string(bytes).map(Cow::Borrowed)?,
+                Ok(10) => msg.subject = r.read_string(bytes)?.to_owned(),
+                Ok(18) => msg.body = r.read_string(bytes)?.to_owned(),
                 Ok(26) => msg.action = Some(r.read_message::<TransitionAction>(bytes)?),
-                Ok(34) => msg.image_url = Some(r.read_string(bytes).map(Cow::Borrowed)?),
+                Ok(34) => msg.image_url = Some(r.read_string(bytes)?.to_owned()),
                 Ok(t) => { r.read_unknown(bytes, t)?; }
                 Err(e) => return Err(e),
             }
@@ -1024,7 +1214,7 @@ impl<'a> MessageRead<'a> for AppDefault<'a> {
     }
 }
 
-impl<'a> MessageWrite for AppDefault<'a> {
+impl MessageWrite for AppDefault {
     fn get_size(&self) -> usize {
         0
         + 1 + sizeof_len((&self.subject).len())
@@ -1042,19 +1232,29 @@ impl<'a> MessageWrite for AppDefault<'a> {
     }
 }
 
+
+            impl TryFrom<&[u8]> for AppDefault {
+                type Error=quick_protobuf::Error;
+
+                fn try_from(buf: &[u8]) -> Result<Self> {
+                    let mut reader = BytesReader::from_bytes(&buf);
+                    Ok(AppDefault::from_reader(&mut reader, &buf)?)
+                }
+            }
+            
 #[allow(clippy::derive_partial_eq_without_eq)]
 #[derive(Debug, Default, PartialEq, Clone)]
-pub struct MovieReward<'a> {
-    pub image_url: Cow<'a, str>,
-    pub ads: Option<AdNetworkList<'a>>,
+pub struct MovieReward {
+    pub image_url: String,
+    pub ads: Option<AdNetworkList>,
 }
 
-impl<'a> MessageRead<'a> for MovieReward<'a> {
+impl<'a> MessageRead<'a> for MovieReward {
     fn from_reader(r: &mut BytesReader, bytes: &'a [u8]) -> Result<Self> {
         let mut msg = Self::default();
         while !r.is_eof() {
             match r.next_tag(bytes) {
-                Ok(10) => msg.image_url = r.read_string(bytes).map(Cow::Borrowed)?,
+                Ok(10) => msg.image_url = r.read_string(bytes)?.to_owned(),
                 Ok(18) => msg.ads = Some(r.read_message::<AdNetworkList>(bytes)?),
                 Ok(t) => { r.read_unknown(bytes, t)?; }
                 Err(e) => return Err(e),
@@ -1064,7 +1264,7 @@ impl<'a> MessageRead<'a> for MovieReward<'a> {
     }
 }
 
-impl<'a> MessageWrite for MovieReward<'a> {
+impl MessageWrite for MovieReward {
     fn get_size(&self) -> usize {
         0
         + 1 + sizeof_len((&self.image_url).len())
@@ -1078,20 +1278,30 @@ impl<'a> MessageWrite for MovieReward<'a> {
     }
 }
 
+
+            impl TryFrom<&[u8]> for MovieReward {
+                type Error=quick_protobuf::Error;
+
+                fn try_from(buf: &[u8]) -> Result<Self> {
+                    let mut reader = BytesReader::from_bytes(&buf);
+                    Ok(MovieReward::from_reader(&mut reader, &buf)?)
+                }
+            }
+            
 #[allow(clippy::derive_partial_eq_without_eq)]
 #[derive(Debug, Default, PartialEq, Clone)]
-pub struct OneImage<'a> {
-    pub action: Option<TransitionAction<'a>>,
-    pub image_url: Option<Cow<'a, str>>,
+pub struct OneImage {
+    pub action: Option<TransitionAction>,
+    pub image_url: Option<String>,
 }
 
-impl<'a> MessageRead<'a> for OneImage<'a> {
+impl<'a> MessageRead<'a> for OneImage {
     fn from_reader(r: &mut BytesReader, bytes: &'a [u8]) -> Result<Self> {
         let mut msg = Self::default();
         while !r.is_eof() {
             match r.next_tag(bytes) {
                 Ok(10) => msg.action = Some(r.read_message::<TransitionAction>(bytes)?),
-                Ok(18) => msg.image_url = Some(r.read_string(bytes).map(Cow::Borrowed)?),
+                Ok(18) => msg.image_url = Some(r.read_string(bytes)?.to_owned()),
                 Ok(t) => { r.read_unknown(bytes, t)?; }
                 Err(e) => return Err(e),
             }
@@ -1100,7 +1310,7 @@ impl<'a> MessageRead<'a> for OneImage<'a> {
     }
 }
 
-impl<'a> MessageWrite for OneImage<'a> {
+impl MessageWrite for OneImage {
     fn get_size(&self) -> usize {
         0
         + self.action.as_ref().map_or(0, |m| 1 + sizeof_len((m).get_size()))
@@ -1114,6 +1324,16 @@ impl<'a> MessageWrite for OneImage<'a> {
     }
 }
 
+
+            impl TryFrom<&[u8]> for OneImage {
+                type Error=quick_protobuf::Error;
+
+                fn try_from(buf: &[u8]) -> Result<Self> {
+                    let mut reader = BytesReader::from_bytes(&buf);
+                    Ok(OneImage::from_reader(&mut reader, &buf)?)
+                }
+            }
+            
 #[allow(clippy::derive_partial_eq_without_eq)]
 #[derive(Debug, Default, PartialEq, Clone)]
 pub struct UserTickets {
@@ -1150,28 +1370,38 @@ impl MessageWrite for UserTickets {
     }
 }
 
+
+            impl TryFrom<&[u8]> for UserTickets {
+                type Error=quick_protobuf::Error;
+
+                fn try_from(buf: &[u8]) -> Result<Self> {
+                    let mut reader = BytesReader::from_bytes(&buf);
+                    Ok(UserTickets::from_reader(&mut reader, &buf)?)
+                }
+            }
+            
 #[allow(clippy::derive_partial_eq_without_eq)]
 #[derive(Debug, Default, PartialEq, Clone)]
-pub struct Title<'a> {
+pub struct Title {
     pub id: u32,
-    pub name: Cow<'a, str>,
-    pub author: Cow<'a, str>,
-    pub portrait_image: Option<Cow<'a, str>>,
-    pub landscape_image: Option<Cow<'a, str>>,
+    pub name: String,
+    pub author: String,
+    pub portrait_image: Option<String>,
+    pub landscape_image: Option<String>,
     pub views: u32,
     pub language: Option<i32>,
 }
 
-impl<'a> MessageRead<'a> for Title<'a> {
+impl<'a> MessageRead<'a> for Title {
     fn from_reader(r: &mut BytesReader, bytes: &'a [u8]) -> Result<Self> {
         let mut msg = Self::default();
         while !r.is_eof() {
             match r.next_tag(bytes) {
                 Ok(8) => msg.id = r.read_uint32(bytes)?,
-                Ok(18) => msg.name = r.read_string(bytes).map(Cow::Borrowed)?,
-                Ok(26) => msg.author = r.read_string(bytes).map(Cow::Borrowed)?,
-                Ok(34) => msg.portrait_image = Some(r.read_string(bytes).map(Cow::Borrowed)?),
-                Ok(42) => msg.landscape_image = Some(r.read_string(bytes).map(Cow::Borrowed)?),
+                Ok(18) => msg.name = r.read_string(bytes)?.to_owned(),
+                Ok(26) => msg.author = r.read_string(bytes)?.to_owned(),
+                Ok(34) => msg.portrait_image = Some(r.read_string(bytes)?.to_owned()),
+                Ok(42) => msg.landscape_image = Some(r.read_string(bytes)?.to_owned()),
                 Ok(48) => msg.views = r.read_uint32(bytes)?,
                 Ok(56) => msg.language = Some(r.read_int32(bytes)?),
                 Ok(t) => { r.read_unknown(bytes, t)?; }
@@ -1182,7 +1412,7 @@ impl<'a> MessageRead<'a> for Title<'a> {
     }
 }
 
-impl<'a> MessageWrite for Title<'a> {
+impl MessageWrite for Title {
     fn get_size(&self) -> usize {
         0
         + 1 + sizeof_varint(*(&self.id) as u64)
@@ -1206,21 +1436,31 @@ impl<'a> MessageWrite for Title<'a> {
     }
 }
 
+
+            impl TryFrom<&[u8]> for Title {
+                type Error=quick_protobuf::Error;
+
+                fn try_from(buf: &[u8]) -> Result<Self> {
+                    let mut reader = BytesReader::from_bytes(&buf);
+                    Ok(Title::from_reader(&mut reader, &buf)?)
+                }
+            }
+            
 #[allow(clippy::derive_partial_eq_without_eq)]
 #[derive(Debug, Default, PartialEq, Clone)]
-pub struct FreeViewDialogue<'a> {
+pub struct FreeViewDialogue {
     pub platform: i32,
-    pub dialogue_url: Cow<'a, str>,
-    pub publisher_banner: Banner<'a>,
+    pub dialogue_url: String,
+    pub publisher_banner: Banner,
 }
 
-impl<'a> MessageRead<'a> for FreeViewDialogue<'a> {
+impl<'a> MessageRead<'a> for FreeViewDialogue {
     fn from_reader(r: &mut BytesReader, bytes: &'a [u8]) -> Result<Self> {
         let mut msg = Self::default();
         while !r.is_eof() {
             match r.next_tag(bytes) {
                 Ok(8) => msg.platform = r.read_int32(bytes)?,
-                Ok(18) => msg.dialogue_url = r.read_string(bytes).map(Cow::Borrowed)?,
+                Ok(18) => msg.dialogue_url = r.read_string(bytes)?.to_owned(),
                 Ok(26) => msg.publisher_banner = r.read_message::<Banner>(bytes)?,
                 Ok(t) => { r.read_unknown(bytes, t)?; }
                 Err(e) => return Err(e),
@@ -1230,7 +1470,7 @@ impl<'a> MessageRead<'a> for FreeViewDialogue<'a> {
     }
 }
 
-impl<'a> MessageWrite for FreeViewDialogue<'a> {
+impl MessageWrite for FreeViewDialogue {
     fn get_size(&self) -> usize {
         0
         + 1 + sizeof_varint(*(&self.platform) as u64)
@@ -1246,13 +1486,23 @@ impl<'a> MessageWrite for FreeViewDialogue<'a> {
     }
 }
 
+
+            impl TryFrom<&[u8]> for FreeViewDialogue {
+                type Error=quick_protobuf::Error;
+
+                fn try_from(buf: &[u8]) -> Result<Self> {
+                    let mut reader = BytesReader::from_bytes(&buf);
+                    Ok(FreeViewDialogue::from_reader(&mut reader, &buf)?)
+                }
+            }
+            
 #[allow(clippy::derive_partial_eq_without_eq)]
 #[derive(Debug, Default, PartialEq, Clone)]
-pub struct AdNetworkList<'a> {
-    pub ads: Vec<AdNetwork<'a>>,
+pub struct AdNetworkList {
+    pub ads: Vec<AdNetwork>,
 }
 
-impl<'a> MessageRead<'a> for AdNetworkList<'a> {
+impl<'a> MessageRead<'a> for AdNetworkList {
     fn from_reader(r: &mut BytesReader, bytes: &'a [u8]) -> Result<Self> {
         let mut msg = Self::default();
         while !r.is_eof() {
@@ -1266,7 +1516,7 @@ impl<'a> MessageRead<'a> for AdNetworkList<'a> {
     }
 }
 
-impl<'a> MessageWrite for AdNetworkList<'a> {
+impl MessageWrite for AdNetworkList {
     fn get_size(&self) -> usize {
         0
         + self.ads.iter().map(|s| 1 + sizeof_len((s).get_size())).sum::<usize>()
@@ -1278,18 +1528,28 @@ impl<'a> MessageWrite for AdNetworkList<'a> {
     }
 }
 
+
+            impl TryFrom<&[u8]> for AdNetworkList {
+                type Error=quick_protobuf::Error;
+
+                fn try_from(buf: &[u8]) -> Result<Self> {
+                    let mut reader = BytesReader::from_bytes(&buf);
+                    Ok(AdNetworkList::from_reader(&mut reader, &buf)?)
+                }
+            }
+            
 #[allow(clippy::derive_partial_eq_without_eq)]
 #[derive(Debug, Default, PartialEq, Clone)]
-pub struct AdNetwork<'a> {
-    pub fb: Option<mod_AdNetwork::Facebook<'a>>,
-    pub admob: Option<mod_AdNetwork::Admob<'a>>,
-    pub mopub: Option<mod_AdNetwork::Mopub<'a>>,
-    pub adsense: Option<mod_AdNetwork::Adsense<'a>>,
-    pub applovin: Option<mod_AdNetwork::Applovin<'a>>,
-    pub applovin_max: Option<mod_AdNetwork::ApplovinMax<'a>>,
+pub struct AdNetwork {
+    pub fb: Option<mod_AdNetwork::Facebook>,
+    pub admob: Option<mod_AdNetwork::Admob>,
+    pub mopub: Option<mod_AdNetwork::Mopub>,
+    pub adsense: Option<mod_AdNetwork::Adsense>,
+    pub applovin: Option<mod_AdNetwork::Applovin>,
+    pub applovin_max: Option<mod_AdNetwork::ApplovinMax>,
 }
 
-impl<'a> MessageRead<'a> for AdNetwork<'a> {
+impl<'a> MessageRead<'a> for AdNetwork {
     fn from_reader(r: &mut BytesReader, bytes: &'a [u8]) -> Result<Self> {
         let mut msg = Self::default();
         while !r.is_eof() {
@@ -1308,7 +1568,7 @@ impl<'a> MessageRead<'a> for AdNetwork<'a> {
     }
 }
 
-impl<'a> MessageWrite for AdNetwork<'a> {
+impl MessageWrite for AdNetwork {
     fn get_size(&self) -> usize {
         0
         + self.fb.as_ref().map_or(0, |m| 1 + sizeof_len((m).get_size()))
@@ -1330,23 +1590,32 @@ impl<'a> MessageWrite for AdNetwork<'a> {
     }
 }
 
+
+            impl TryFrom<&[u8]> for AdNetwork {
+                type Error=quick_protobuf::Error;
+
+                fn try_from(buf: &[u8]) -> Result<Self> {
+                    let mut reader = BytesReader::from_bytes(&buf);
+                    Ok(AdNetwork::from_reader(&mut reader, &buf)?)
+                }
+            }
+            
 pub mod mod_AdNetwork {
 
-use std::borrow::Cow;
 use super::*;
 
 #[allow(clippy::derive_partial_eq_without_eq)]
 #[derive(Debug, Default, PartialEq, Clone)]
-pub struct Facebook<'a> {
-    pub id: Cow<'a, str>,
+pub struct Facebook {
+    pub id: String,
 }
 
-impl<'a> MessageRead<'a> for Facebook<'a> {
+impl<'a> MessageRead<'a> for Facebook {
     fn from_reader(r: &mut BytesReader, bytes: &'a [u8]) -> Result<Self> {
         let mut msg = Self::default();
         while !r.is_eof() {
             match r.next_tag(bytes) {
-                Ok(10) => msg.id = r.read_string(bytes).map(Cow::Borrowed)?,
+                Ok(10) => msg.id = r.read_string(bytes)?.to_owned(),
                 Ok(t) => { r.read_unknown(bytes, t)?; }
                 Err(e) => return Err(e),
             }
@@ -1355,7 +1624,7 @@ impl<'a> MessageRead<'a> for Facebook<'a> {
     }
 }
 
-impl<'a> MessageWrite for Facebook<'a> {
+impl MessageWrite for Facebook {
     fn get_size(&self) -> usize {
         0
         + 1 + sizeof_len((&self.id).len())
@@ -1367,20 +1636,30 @@ impl<'a> MessageWrite for Facebook<'a> {
     }
 }
 
+
+            impl TryFrom<&[u8]> for Facebook {
+                type Error=quick_protobuf::Error;
+
+                fn try_from(buf: &[u8]) -> Result<Self> {
+                    let mut reader = BytesReader::from_bytes(&buf);
+                    Ok(Facebook::from_reader(&mut reader, &buf)?)
+                }
+            }
+            
 #[allow(clippy::derive_partial_eq_without_eq)]
 #[derive(Debug, Default, PartialEq, Clone)]
-pub struct Admob<'a> {
-    pub id: Cow<'a, str>,
-    pub location: Cow<'a, str>,
+pub struct Admob {
+    pub id: String,
+    pub location: String,
 }
 
-impl<'a> MessageRead<'a> for Admob<'a> {
+impl<'a> MessageRead<'a> for Admob {
     fn from_reader(r: &mut BytesReader, bytes: &'a [u8]) -> Result<Self> {
         let mut msg = Self::default();
         while !r.is_eof() {
             match r.next_tag(bytes) {
-                Ok(10) => msg.id = r.read_string(bytes).map(Cow::Borrowed)?,
-                Ok(18) => msg.location = r.read_string(bytes).map(Cow::Borrowed)?,
+                Ok(10) => msg.id = r.read_string(bytes)?.to_owned(),
+                Ok(18) => msg.location = r.read_string(bytes)?.to_owned(),
                 Ok(t) => { r.read_unknown(bytes, t)?; }
                 Err(e) => return Err(e),
             }
@@ -1389,7 +1668,7 @@ impl<'a> MessageRead<'a> for Admob<'a> {
     }
 }
 
-impl<'a> MessageWrite for Admob<'a> {
+impl MessageWrite for Admob {
     fn get_size(&self) -> usize {
         0
         + 1 + sizeof_len((&self.id).len())
@@ -1403,18 +1682,28 @@ impl<'a> MessageWrite for Admob<'a> {
     }
 }
 
+
+            impl TryFrom<&[u8]> for Admob {
+                type Error=quick_protobuf::Error;
+
+                fn try_from(buf: &[u8]) -> Result<Self> {
+                    let mut reader = BytesReader::from_bytes(&buf);
+                    Ok(Admob::from_reader(&mut reader, &buf)?)
+                }
+            }
+            
 #[allow(clippy::derive_partial_eq_without_eq)]
 #[derive(Debug, Default, PartialEq, Clone)]
-pub struct Mopub<'a> {
-    pub id: Cow<'a, str>,
+pub struct Mopub {
+    pub id: String,
 }
 
-impl<'a> MessageRead<'a> for Mopub<'a> {
+impl<'a> MessageRead<'a> for Mopub {
     fn from_reader(r: &mut BytesReader, bytes: &'a [u8]) -> Result<Self> {
         let mut msg = Self::default();
         while !r.is_eof() {
             match r.next_tag(bytes) {
-                Ok(10) => msg.id = r.read_string(bytes).map(Cow::Borrowed)?,
+                Ok(10) => msg.id = r.read_string(bytes)?.to_owned(),
                 Ok(t) => { r.read_unknown(bytes, t)?; }
                 Err(e) => return Err(e),
             }
@@ -1423,7 +1712,7 @@ impl<'a> MessageRead<'a> for Mopub<'a> {
     }
 }
 
-impl<'a> MessageWrite for Mopub<'a> {
+impl MessageWrite for Mopub {
     fn get_size(&self) -> usize {
         0
         + 1 + sizeof_len((&self.id).len())
@@ -1435,18 +1724,28 @@ impl<'a> MessageWrite for Mopub<'a> {
     }
 }
 
+
+            impl TryFrom<&[u8]> for Mopub {
+                type Error=quick_protobuf::Error;
+
+                fn try_from(buf: &[u8]) -> Result<Self> {
+                    let mut reader = BytesReader::from_bytes(&buf);
+                    Ok(Mopub::from_reader(&mut reader, &buf)?)
+                }
+            }
+            
 #[allow(clippy::derive_partial_eq_without_eq)]
 #[derive(Debug, Default, PartialEq, Clone)]
-pub struct Adsense<'a> {
-    pub id: Cow<'a, str>,
+pub struct Adsense {
+    pub id: String,
 }
 
-impl<'a> MessageRead<'a> for Adsense<'a> {
+impl<'a> MessageRead<'a> for Adsense {
     fn from_reader(r: &mut BytesReader, bytes: &'a [u8]) -> Result<Self> {
         let mut msg = Self::default();
         while !r.is_eof() {
             match r.next_tag(bytes) {
-                Ok(10) => msg.id = r.read_string(bytes).map(Cow::Borrowed)?,
+                Ok(10) => msg.id = r.read_string(bytes)?.to_owned(),
                 Ok(t) => { r.read_unknown(bytes, t)?; }
                 Err(e) => return Err(e),
             }
@@ -1455,7 +1754,7 @@ impl<'a> MessageRead<'a> for Adsense<'a> {
     }
 }
 
-impl<'a> MessageWrite for Adsense<'a> {
+impl MessageWrite for Adsense {
     fn get_size(&self) -> usize {
         0
         + 1 + sizeof_len((&self.id).len())
@@ -1467,18 +1766,28 @@ impl<'a> MessageWrite for Adsense<'a> {
     }
 }
 
+
+            impl TryFrom<&[u8]> for Adsense {
+                type Error=quick_protobuf::Error;
+
+                fn try_from(buf: &[u8]) -> Result<Self> {
+                    let mut reader = BytesReader::from_bytes(&buf);
+                    Ok(Adsense::from_reader(&mut reader, &buf)?)
+                }
+            }
+            
 #[allow(clippy::derive_partial_eq_without_eq)]
 #[derive(Debug, Default, PartialEq, Clone)]
-pub struct Applovin<'a> {
-    pub id: Cow<'a, str>,
+pub struct Applovin {
+    pub id: String,
 }
 
-impl<'a> MessageRead<'a> for Applovin<'a> {
+impl<'a> MessageRead<'a> for Applovin {
     fn from_reader(r: &mut BytesReader, bytes: &'a [u8]) -> Result<Self> {
         let mut msg = Self::default();
         while !r.is_eof() {
             match r.next_tag(bytes) {
-                Ok(10) => msg.id = r.read_string(bytes).map(Cow::Borrowed)?,
+                Ok(10) => msg.id = r.read_string(bytes)?.to_owned(),
                 Ok(t) => { r.read_unknown(bytes, t)?; }
                 Err(e) => return Err(e),
             }
@@ -1487,7 +1796,7 @@ impl<'a> MessageRead<'a> for Applovin<'a> {
     }
 }
 
-impl<'a> MessageWrite for Applovin<'a> {
+impl MessageWrite for Applovin {
     fn get_size(&self) -> usize {
         0
         + 1 + sizeof_len((&self.id).len())
@@ -1499,19 +1808,29 @@ impl<'a> MessageWrite for Applovin<'a> {
     }
 }
 
+
+            impl TryFrom<&[u8]> for Applovin {
+                type Error=quick_protobuf::Error;
+
+                fn try_from(buf: &[u8]) -> Result<Self> {
+                    let mut reader = BytesReader::from_bytes(&buf);
+                    Ok(Applovin::from_reader(&mut reader, &buf)?)
+                }
+            }
+            
 #[allow(clippy::derive_partial_eq_without_eq)]
 #[derive(Debug, Default, PartialEq, Clone)]
-pub struct ApplovinMax<'a> {
-    pub id: Cow<'a, str>,
+pub struct ApplovinMax {
+    pub id: String,
     pub type_pb: i32,
 }
 
-impl<'a> MessageRead<'a> for ApplovinMax<'a> {
+impl<'a> MessageRead<'a> for ApplovinMax {
     fn from_reader(r: &mut BytesReader, bytes: &'a [u8]) -> Result<Self> {
         let mut msg = Self::default();
         while !r.is_eof() {
             match r.next_tag(bytes) {
-                Ok(10) => msg.id = r.read_string(bytes).map(Cow::Borrowed)?,
+                Ok(10) => msg.id = r.read_string(bytes)?.to_owned(),
                 Ok(16) => msg.type_pb = r.read_int32(bytes)?,
                 Ok(t) => { r.read_unknown(bytes, t)?; }
                 Err(e) => return Err(e),
@@ -1521,7 +1840,7 @@ impl<'a> MessageRead<'a> for ApplovinMax<'a> {
     }
 }
 
-impl<'a> MessageWrite for ApplovinMax<'a> {
+impl MessageWrite for ApplovinMax {
     fn get_size(&self) -> usize {
         0
         + 1 + sizeof_len((&self.id).len())
@@ -1535,5 +1854,15 @@ impl<'a> MessageWrite for ApplovinMax<'a> {
     }
 }
 
+
+            impl TryFrom<&[u8]> for ApplovinMax {
+                type Error=quick_protobuf::Error;
+
+                fn try_from(buf: &[u8]) -> Result<Self> {
+                    let mut reader = BytesReader::from_bytes(&buf);
+                    Ok(ApplovinMax::from_reader(&mut reader, &buf)?)
+                }
+            }
+            
 }
 
