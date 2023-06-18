@@ -8,6 +8,7 @@ optional ErrorResult error = 2;
 
 message SuccessResult {
 optional RegistrationData registration_data = 2;
+optional TitleDetailView title_detail_view = 8;
 optional MangaViewer viewer = 10;
 }
 
@@ -21,6 +22,33 @@ optional string debug = 4;
 
 message RegistrationData {
 required string device_secret = 1;
+}
+
+message ChapterListGroup {
+repeated Chapter first_chapter_list = 2;
+repeated Chapter mid_chapter_list = 3;
+repeated Chapter last_chapter_list = 4;
+}
+message TitleDetailView {
+required Title title = 1;
+required string title_image_url = 2;
+required string overview = 3;
+required string background_image_url = 4;
+optional uint32 next_timestamp = 5;
+optional int32 update_timing = 6;
+optional string viewing_period_description = 7;
+optional string non_appearance_info = 8;
+repeated Chapter first_chapter_list = 9;
+repeated Chapter last_chapter_list = 10;
+repeated Banner banners = 11;
+repeated Title recommended_title_list = 12;
+optional SNS sns = 13;
+required bool is_simul_released = 14;
+optional bool is_subscribed = 15;
+optional int32 rating = 16;
+optional bool chapters_descending = 17;
+optional uint32 number_of_views = 18;
+required ChapterListGroup chapter_list_group = 28;
 }
 
 message MangaViewer {
@@ -83,17 +111,17 @@ required TransitionAction action = 2;
 required uint32 id = 3;
 }
 message TransitionAction {
-required int32 method = 1;
-required string url = 2;
+optional int32 method = 1;
+optional string url = 2;
 }
 
 message LastPage {
 required Chapter current_chapter = 1;
-required Chapter next_chapter = 2;
+optional Chapter next_chapter = 2;
 repeated Comment top_comments = 3;
 optional bool is_subscribed = 4;
 optional uint32 next_timestamp = 5;
-required int32 chapter_type = 6;
+optional int32 chapter_type = 6;
 optional AdNetworkList ads = 7;
 optional Popup popup = 8;
 repeated Banner banner = 9;
@@ -128,7 +156,7 @@ required string body = 2;
 optional Button ok_button = 3;
 optional Button neutral_button = 4;
 optional Button cancel_button = 5;
-required int32 language = 6;
+optional int32 language = 6;
 }
 message Button {
 required string text = 1;
@@ -160,7 +188,7 @@ required string author = 3;
 optional string portrait_image = 4;
 optional string landscape_image = 5;
 required uint32 views = 6;
-required int32 language = 7;
+optional int32 language = 7;
 }
 message FreeViewDialogue {
 required int32 platform = 1;

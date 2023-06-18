@@ -1,4 +1,4 @@
-// Automatically generated rust module for 'mangaplus.proto' file
+// Automatically generated rust module for 'mangaplus_pb.proto' file
 
 #![allow(non_snake_case)]
 #![allow(non_upper_case_globals)]
@@ -54,6 +54,7 @@ impl<'a> MessageWrite for Response<'a> {
 #[derive(Debug, Default, PartialEq, Clone)]
 pub struct SuccessResult<'a> {
     pub registration_data: Option<RegistrationData<'a>>,
+    pub title_detail_view: Option<TitleDetailView<'a>>,
     pub viewer: Option<MangaViewer<'a>>,
 }
 
@@ -63,6 +64,7 @@ impl<'a> MessageRead<'a> for SuccessResult<'a> {
         while !r.is_eof() {
             match r.next_tag(bytes) {
                 Ok(18) => msg.registration_data = Some(r.read_message::<RegistrationData>(bytes)?),
+                Ok(66) => msg.title_detail_view = Some(r.read_message::<TitleDetailView>(bytes)?),
                 Ok(82) => msg.viewer = Some(r.read_message::<MangaViewer>(bytes)?),
                 Ok(t) => { r.read_unknown(bytes, t)?; }
                 Err(e) => return Err(e),
@@ -76,11 +78,13 @@ impl<'a> MessageWrite for SuccessResult<'a> {
     fn get_size(&self) -> usize {
         0
         + self.registration_data.as_ref().map_or(0, |m| 1 + sizeof_len((m).get_size()))
+        + self.title_detail_view.as_ref().map_or(0, |m| 1 + sizeof_len((m).get_size()))
         + self.viewer.as_ref().map_or(0, |m| 1 + sizeof_len((m).get_size()))
     }
 
     fn write_message<W: WriterBackend>(&self, w: &mut Writer<W>) -> Result<()> {
         if let Some(ref s) = self.registration_data { w.write_with_tag(18, |w| w.write_message(s))?; }
+        if let Some(ref s) = self.title_detail_view { w.write_with_tag(66, |w| w.write_message(s))?; }
         if let Some(ref s) = self.viewer { w.write_with_tag(82, |w| w.write_message(s))?; }
         Ok(())
     }
@@ -162,6 +166,150 @@ impl<'a> MessageWrite for RegistrationData<'a> {
 
     fn write_message<W: WriterBackend>(&self, w: &mut Writer<W>) -> Result<()> {
         w.write_with_tag(10, |w| w.write_string(&**&self.device_secret))?;
+        Ok(())
+    }
+}
+
+#[allow(clippy::derive_partial_eq_without_eq)]
+#[derive(Debug, Default, PartialEq, Clone)]
+pub struct ChapterListGroup<'a> {
+    pub first_chapter_list: Vec<Chapter<'a>>,
+    pub mid_chapter_list: Vec<Chapter<'a>>,
+    pub last_chapter_list: Vec<Chapter<'a>>,
+}
+
+impl<'a> MessageRead<'a> for ChapterListGroup<'a> {
+    fn from_reader(r: &mut BytesReader, bytes: &'a [u8]) -> Result<Self> {
+        let mut msg = Self::default();
+        while !r.is_eof() {
+            match r.next_tag(bytes) {
+                Ok(18) => msg.first_chapter_list.push(r.read_message::<Chapter>(bytes)?),
+                Ok(26) => msg.mid_chapter_list.push(r.read_message::<Chapter>(bytes)?),
+                Ok(34) => msg.last_chapter_list.push(r.read_message::<Chapter>(bytes)?),
+                Ok(t) => { r.read_unknown(bytes, t)?; }
+                Err(e) => return Err(e),
+            }
+        }
+        Ok(msg)
+    }
+}
+
+impl<'a> MessageWrite for ChapterListGroup<'a> {
+    fn get_size(&self) -> usize {
+        0
+        + self.first_chapter_list.iter().map(|s| 1 + sizeof_len((s).get_size())).sum::<usize>()
+        + self.mid_chapter_list.iter().map(|s| 1 + sizeof_len((s).get_size())).sum::<usize>()
+        + self.last_chapter_list.iter().map(|s| 1 + sizeof_len((s).get_size())).sum::<usize>()
+    }
+
+    fn write_message<W: WriterBackend>(&self, w: &mut Writer<W>) -> Result<()> {
+        for s in &self.first_chapter_list { w.write_with_tag(18, |w| w.write_message(s))?; }
+        for s in &self.mid_chapter_list { w.write_with_tag(26, |w| w.write_message(s))?; }
+        for s in &self.last_chapter_list { w.write_with_tag(34, |w| w.write_message(s))?; }
+        Ok(())
+    }
+}
+
+#[allow(clippy::derive_partial_eq_without_eq)]
+#[derive(Debug, Default, PartialEq, Clone)]
+pub struct TitleDetailView<'a> {
+    pub title: Title<'a>,
+    pub title_image_url: Cow<'a, str>,
+    pub overview: Cow<'a, str>,
+    pub background_image_url: Cow<'a, str>,
+    pub next_timestamp: Option<u32>,
+    pub update_timing: Option<i32>,
+    pub viewing_period_description: Option<Cow<'a, str>>,
+    pub non_appearance_info: Option<Cow<'a, str>>,
+    pub first_chapter_list: Vec<Chapter<'a>>,
+    pub last_chapter_list: Vec<Chapter<'a>>,
+    pub banners: Vec<Banner<'a>>,
+    pub recommended_title_list: Vec<Title<'a>>,
+    pub sns: Option<SNS<'a>>,
+    pub is_simul_released: bool,
+    pub is_subscribed: Option<bool>,
+    pub rating: Option<i32>,
+    pub chapters_descending: Option<bool>,
+    pub number_of_views: Option<u32>,
+    pub chapter_list_group: ChapterListGroup<'a>,
+}
+
+impl<'a> MessageRead<'a> for TitleDetailView<'a> {
+    fn from_reader(r: &mut BytesReader, bytes: &'a [u8]) -> Result<Self> {
+        let mut msg = Self::default();
+        while !r.is_eof() {
+            match r.next_tag(bytes) {
+                Ok(10) => msg.title = r.read_message::<Title>(bytes)?,
+                Ok(18) => msg.title_image_url = r.read_string(bytes).map(Cow::Borrowed)?,
+                Ok(26) => msg.overview = r.read_string(bytes).map(Cow::Borrowed)?,
+                Ok(34) => msg.background_image_url = r.read_string(bytes).map(Cow::Borrowed)?,
+                Ok(40) => msg.next_timestamp = Some(r.read_uint32(bytes)?),
+                Ok(48) => msg.update_timing = Some(r.read_int32(bytes)?),
+                Ok(58) => msg.viewing_period_description = Some(r.read_string(bytes).map(Cow::Borrowed)?),
+                Ok(66) => msg.non_appearance_info = Some(r.read_string(bytes).map(Cow::Borrowed)?),
+                Ok(74) => msg.first_chapter_list.push(r.read_message::<Chapter>(bytes)?),
+                Ok(82) => msg.last_chapter_list.push(r.read_message::<Chapter>(bytes)?),
+                Ok(90) => msg.banners.push(r.read_message::<Banner>(bytes)?),
+                Ok(98) => msg.recommended_title_list.push(r.read_message::<Title>(bytes)?),
+                Ok(106) => msg.sns = Some(r.read_message::<SNS>(bytes)?),
+                Ok(112) => msg.is_simul_released = r.read_bool(bytes)?,
+                Ok(120) => msg.is_subscribed = Some(r.read_bool(bytes)?),
+                Ok(128) => msg.rating = Some(r.read_int32(bytes)?),
+                Ok(136) => msg.chapters_descending = Some(r.read_bool(bytes)?),
+                Ok(144) => msg.number_of_views = Some(r.read_uint32(bytes)?),
+                Ok(226) => msg.chapter_list_group = r.read_message::<ChapterListGroup>(bytes)?,
+                Ok(t) => { r.read_unknown(bytes, t)?; }
+                Err(e) => return Err(e),
+            }
+        }
+        Ok(msg)
+    }
+}
+
+impl<'a> MessageWrite for TitleDetailView<'a> {
+    fn get_size(&self) -> usize {
+        0
+        + 1 + sizeof_len((&self.title).get_size())
+        + 1 + sizeof_len((&self.title_image_url).len())
+        + 1 + sizeof_len((&self.overview).len())
+        + 1 + sizeof_len((&self.background_image_url).len())
+        + self.next_timestamp.as_ref().map_or(0, |m| 1 + sizeof_varint(*(m) as u64))
+        + self.update_timing.as_ref().map_or(0, |m| 1 + sizeof_varint(*(m) as u64))
+        + self.viewing_period_description.as_ref().map_or(0, |m| 1 + sizeof_len((m).len()))
+        + self.non_appearance_info.as_ref().map_or(0, |m| 1 + sizeof_len((m).len()))
+        + self.first_chapter_list.iter().map(|s| 1 + sizeof_len((s).get_size())).sum::<usize>()
+        + self.last_chapter_list.iter().map(|s| 1 + sizeof_len((s).get_size())).sum::<usize>()
+        + self.banners.iter().map(|s| 1 + sizeof_len((s).get_size())).sum::<usize>()
+        + self.recommended_title_list.iter().map(|s| 1 + sizeof_len((s).get_size())).sum::<usize>()
+        + self.sns.as_ref().map_or(0, |m| 1 + sizeof_len((m).get_size()))
+        + 1 + sizeof_varint(*(&self.is_simul_released) as u64)
+        + self.is_subscribed.as_ref().map_or(0, |m| 1 + sizeof_varint(*(m) as u64))
+        + self.rating.as_ref().map_or(0, |m| 2 + sizeof_varint(*(m) as u64))
+        + self.chapters_descending.as_ref().map_or(0, |m| 2 + sizeof_varint(*(m) as u64))
+        + self.number_of_views.as_ref().map_or(0, |m| 2 + sizeof_varint(*(m) as u64))
+        + 2 + sizeof_len((&self.chapter_list_group).get_size())
+    }
+
+    fn write_message<W: WriterBackend>(&self, w: &mut Writer<W>) -> Result<()> {
+        w.write_with_tag(10, |w| w.write_message(&self.title))?;
+        w.write_with_tag(18, |w| w.write_string(&**&self.title_image_url))?;
+        w.write_with_tag(26, |w| w.write_string(&**&self.overview))?;
+        w.write_with_tag(34, |w| w.write_string(&**&self.background_image_url))?;
+        if let Some(ref s) = self.next_timestamp { w.write_with_tag(40, |w| w.write_uint32(*s))?; }
+        if let Some(ref s) = self.update_timing { w.write_with_tag(48, |w| w.write_int32(*s))?; }
+        if let Some(ref s) = self.viewing_period_description { w.write_with_tag(58, |w| w.write_string(&**s))?; }
+        if let Some(ref s) = self.non_appearance_info { w.write_with_tag(66, |w| w.write_string(&**s))?; }
+        for s in &self.first_chapter_list { w.write_with_tag(74, |w| w.write_message(s))?; }
+        for s in &self.last_chapter_list { w.write_with_tag(82, |w| w.write_message(s))?; }
+        for s in &self.banners { w.write_with_tag(90, |w| w.write_message(s))?; }
+        for s in &self.recommended_title_list { w.write_with_tag(98, |w| w.write_message(s))?; }
+        if let Some(ref s) = self.sns { w.write_with_tag(106, |w| w.write_message(s))?; }
+        w.write_with_tag(112, |w| w.write_bool(*&self.is_simul_released))?;
+        if let Some(ref s) = self.is_subscribed { w.write_with_tag(120, |w| w.write_bool(*s))?; }
+        if let Some(ref s) = self.rating { w.write_with_tag(128, |w| w.write_int32(*s))?; }
+        if let Some(ref s) = self.chapters_descending { w.write_with_tag(136, |w| w.write_bool(*s))?; }
+        if let Some(ref s) = self.number_of_views { w.write_with_tag(144, |w| w.write_uint32(*s))?; }
+        w.write_with_tag(226, |w| w.write_message(&self.chapter_list_group))?;
         Ok(())
     }
 }
@@ -529,8 +677,8 @@ impl<'a> MessageWrite for Banner<'a> {
 #[allow(clippy::derive_partial_eq_without_eq)]
 #[derive(Debug, Default, PartialEq, Clone)]
 pub struct TransitionAction<'a> {
-    pub method: i32,
-    pub url: Cow<'a, str>,
+    pub method: Option<i32>,
+    pub url: Option<Cow<'a, str>>,
 }
 
 impl<'a> MessageRead<'a> for TransitionAction<'a> {
@@ -538,8 +686,8 @@ impl<'a> MessageRead<'a> for TransitionAction<'a> {
         let mut msg = Self::default();
         while !r.is_eof() {
             match r.next_tag(bytes) {
-                Ok(8) => msg.method = r.read_int32(bytes)?,
-                Ok(18) => msg.url = r.read_string(bytes).map(Cow::Borrowed)?,
+                Ok(8) => msg.method = Some(r.read_int32(bytes)?),
+                Ok(18) => msg.url = Some(r.read_string(bytes).map(Cow::Borrowed)?),
                 Ok(t) => { r.read_unknown(bytes, t)?; }
                 Err(e) => return Err(e),
             }
@@ -551,13 +699,13 @@ impl<'a> MessageRead<'a> for TransitionAction<'a> {
 impl<'a> MessageWrite for TransitionAction<'a> {
     fn get_size(&self) -> usize {
         0
-        + 1 + sizeof_varint(*(&self.method) as u64)
-        + 1 + sizeof_len((&self.url).len())
+        + self.method.as_ref().map_or(0, |m| 1 + sizeof_varint(*(m) as u64))
+        + self.url.as_ref().map_or(0, |m| 1 + sizeof_len((m).len()))
     }
 
     fn write_message<W: WriterBackend>(&self, w: &mut Writer<W>) -> Result<()> {
-        w.write_with_tag(8, |w| w.write_int32(*&self.method))?;
-        w.write_with_tag(18, |w| w.write_string(&**&self.url))?;
+        if let Some(ref s) = self.method { w.write_with_tag(8, |w| w.write_int32(*s))?; }
+        if let Some(ref s) = self.url { w.write_with_tag(18, |w| w.write_string(&**s))?; }
         Ok(())
     }
 }
@@ -566,11 +714,11 @@ impl<'a> MessageWrite for TransitionAction<'a> {
 #[derive(Debug, Default, PartialEq, Clone)]
 pub struct LastPage<'a> {
     pub current_chapter: Chapter<'a>,
-    pub next_chapter: Chapter<'a>,
+    pub next_chapter: Option<Chapter<'a>>,
     pub top_comments: Vec<Comment<'a>>,
     pub is_subscribed: Option<bool>,
     pub next_timestamp: Option<u32>,
-    pub chapter_type: i32,
+    pub chapter_type: Option<i32>,
     pub ads: Option<AdNetworkList<'a>>,
     pub popup: Option<Popup<'a>>,
     pub banner: Vec<Banner<'a>>,
@@ -588,11 +736,11 @@ impl<'a> MessageRead<'a> for LastPage<'a> {
         while !r.is_eof() {
             match r.next_tag(bytes) {
                 Ok(10) => msg.current_chapter = r.read_message::<Chapter>(bytes)?,
-                Ok(18) => msg.next_chapter = r.read_message::<Chapter>(bytes)?,
+                Ok(18) => msg.next_chapter = Some(r.read_message::<Chapter>(bytes)?),
                 Ok(26) => msg.top_comments.push(r.read_message::<Comment>(bytes)?),
                 Ok(32) => msg.is_subscribed = Some(r.read_bool(bytes)?),
                 Ok(40) => msg.next_timestamp = Some(r.read_uint32(bytes)?),
-                Ok(48) => msg.chapter_type = r.read_int32(bytes)?,
+                Ok(48) => msg.chapter_type = Some(r.read_int32(bytes)?),
                 Ok(58) => msg.ads = Some(r.read_message::<AdNetworkList>(bytes)?),
                 Ok(66) => msg.popup = Some(r.read_message::<Popup>(bytes)?),
                 Ok(74) => msg.banner.push(r.read_message::<Banner>(bytes)?),
@@ -614,11 +762,11 @@ impl<'a> MessageWrite for LastPage<'a> {
     fn get_size(&self) -> usize {
         0
         + 1 + sizeof_len((&self.current_chapter).get_size())
-        + 1 + sizeof_len((&self.next_chapter).get_size())
+        + self.next_chapter.as_ref().map_or(0, |m| 1 + sizeof_len((m).get_size()))
         + self.top_comments.iter().map(|s| 1 + sizeof_len((s).get_size())).sum::<usize>()
         + self.is_subscribed.as_ref().map_or(0, |m| 1 + sizeof_varint(*(m) as u64))
         + self.next_timestamp.as_ref().map_or(0, |m| 1 + sizeof_varint(*(m) as u64))
-        + 1 + sizeof_varint(*(&self.chapter_type) as u64)
+        + self.chapter_type.as_ref().map_or(0, |m| 1 + sizeof_varint(*(m) as u64))
         + self.ads.as_ref().map_or(0, |m| 1 + sizeof_len((m).get_size()))
         + self.popup.as_ref().map_or(0, |m| 1 + sizeof_len((m).get_size()))
         + self.banner.iter().map(|s| 1 + sizeof_len((s).get_size())).sum::<usize>()
@@ -632,11 +780,11 @@ impl<'a> MessageWrite for LastPage<'a> {
 
     fn write_message<W: WriterBackend>(&self, w: &mut Writer<W>) -> Result<()> {
         w.write_with_tag(10, |w| w.write_message(&self.current_chapter))?;
-        w.write_with_tag(18, |w| w.write_message(&self.next_chapter))?;
+        if let Some(ref s) = self.next_chapter { w.write_with_tag(18, |w| w.write_message(s))?; }
         for s in &self.top_comments { w.write_with_tag(26, |w| w.write_message(s))?; }
         if let Some(ref s) = self.is_subscribed { w.write_with_tag(32, |w| w.write_bool(*s))?; }
         if let Some(ref s) = self.next_timestamp { w.write_with_tag(40, |w| w.write_uint32(*s))?; }
-        w.write_with_tag(48, |w| w.write_int32(*&self.chapter_type))?;
+        if let Some(ref s) = self.chapter_type { w.write_with_tag(48, |w| w.write_int32(*s))?; }
         if let Some(ref s) = self.ads { w.write_with_tag(58, |w| w.write_message(s))?; }
         if let Some(ref s) = self.popup { w.write_with_tag(66, |w| w.write_message(s))?; }
         for s in &self.banner { w.write_with_tag(74, |w| w.write_message(s))?; }
@@ -770,7 +918,7 @@ pub struct OSDefault<'a> {
     pub ok_button: Option<Button<'a>>,
     pub neutral_button: Option<Button<'a>>,
     pub cancel_button: Option<Button<'a>>,
-    pub language: i32,
+    pub language: Option<i32>,
 }
 
 impl<'a> MessageRead<'a> for OSDefault<'a> {
@@ -783,7 +931,7 @@ impl<'a> MessageRead<'a> for OSDefault<'a> {
                 Ok(26) => msg.ok_button = Some(r.read_message::<Button>(bytes)?),
                 Ok(34) => msg.neutral_button = Some(r.read_message::<Button>(bytes)?),
                 Ok(42) => msg.cancel_button = Some(r.read_message::<Button>(bytes)?),
-                Ok(48) => msg.language = r.read_int32(bytes)?,
+                Ok(48) => msg.language = Some(r.read_int32(bytes)?),
                 Ok(t) => { r.read_unknown(bytes, t)?; }
                 Err(e) => return Err(e),
             }
@@ -800,7 +948,7 @@ impl<'a> MessageWrite for OSDefault<'a> {
         + self.ok_button.as_ref().map_or(0, |m| 1 + sizeof_len((m).get_size()))
         + self.neutral_button.as_ref().map_or(0, |m| 1 + sizeof_len((m).get_size()))
         + self.cancel_button.as_ref().map_or(0, |m| 1 + sizeof_len((m).get_size()))
-        + 1 + sizeof_varint(*(&self.language) as u64)
+        + self.language.as_ref().map_or(0, |m| 1 + sizeof_varint(*(m) as u64))
     }
 
     fn write_message<W: WriterBackend>(&self, w: &mut Writer<W>) -> Result<()> {
@@ -809,7 +957,7 @@ impl<'a> MessageWrite for OSDefault<'a> {
         if let Some(ref s) = self.ok_button { w.write_with_tag(26, |w| w.write_message(s))?; }
         if let Some(ref s) = self.neutral_button { w.write_with_tag(34, |w| w.write_message(s))?; }
         if let Some(ref s) = self.cancel_button { w.write_with_tag(42, |w| w.write_message(s))?; }
-        w.write_with_tag(48, |w| w.write_int32(*&self.language))?;
+        if let Some(ref s) = self.language { w.write_with_tag(48, |w| w.write_int32(*s))?; }
         Ok(())
     }
 }
@@ -1011,7 +1159,7 @@ pub struct Title<'a> {
     pub portrait_image: Option<Cow<'a, str>>,
     pub landscape_image: Option<Cow<'a, str>>,
     pub views: u32,
-    pub language: i32,
+    pub language: Option<i32>,
 }
 
 impl<'a> MessageRead<'a> for Title<'a> {
@@ -1025,7 +1173,7 @@ impl<'a> MessageRead<'a> for Title<'a> {
                 Ok(34) => msg.portrait_image = Some(r.read_string(bytes).map(Cow::Borrowed)?),
                 Ok(42) => msg.landscape_image = Some(r.read_string(bytes).map(Cow::Borrowed)?),
                 Ok(48) => msg.views = r.read_uint32(bytes)?,
-                Ok(56) => msg.language = r.read_int32(bytes)?,
+                Ok(56) => msg.language = Some(r.read_int32(bytes)?),
                 Ok(t) => { r.read_unknown(bytes, t)?; }
                 Err(e) => return Err(e),
             }
@@ -1043,7 +1191,7 @@ impl<'a> MessageWrite for Title<'a> {
         + self.portrait_image.as_ref().map_or(0, |m| 1 + sizeof_len((m).len()))
         + self.landscape_image.as_ref().map_or(0, |m| 1 + sizeof_len((m).len()))
         + 1 + sizeof_varint(*(&self.views) as u64)
-        + 1 + sizeof_varint(*(&self.language) as u64)
+        + self.language.as_ref().map_or(0, |m| 1 + sizeof_varint(*(m) as u64))
     }
 
     fn write_message<W: WriterBackend>(&self, w: &mut Writer<W>) -> Result<()> {
@@ -1053,7 +1201,7 @@ impl<'a> MessageWrite for Title<'a> {
         if let Some(ref s) = self.portrait_image { w.write_with_tag(34, |w| w.write_string(&**s))?; }
         if let Some(ref s) = self.landscape_image { w.write_with_tag(42, |w| w.write_string(&**s))?; }
         w.write_with_tag(48, |w| w.write_uint32(*&self.views))?;
-        w.write_with_tag(56, |w| w.write_int32(*&self.language))?;
+        if let Some(ref s) = self.language { w.write_with_tag(56, |w| w.write_int32(*s))?; }
         Ok(())
     }
 }
