@@ -1,0 +1,203 @@
+// useful website for testing: https://www.protobufpal.com/
+// Parse requests to: https://jumpg-webapi.tokyo-cdn.com/api/manga_viewer?chapter_id=[ID]&split=yes&img_quality=high
+
+message Response {
+optional SuccessResult result = 1;
+optional ErrorResult error = 2;
+}
+
+message SuccessResult {
+optional RegistrationData registration_data = 2;
+optional MangaViewer viewer = 10;
+}
+
+message ErrorResult {
+required int32 action = 1;
+optional OSDefault englishPopup = 2;
+optional OSDefault spanishPopup = 3;
+repeated OSDefault popups = 5;
+optional string debug = 4;
+}
+
+message RegistrationData {
+required string device_secret = 1;
+}
+
+message MangaViewer {
+repeated Page pages = 1;
+optional uint32 chapter_id = 2;
+repeated Chapter chapters = 3;
+optional SNS sns = 4;
+optional string title = 5;
+optional string chapter_name = 6;
+optional uint32 num_comments = 7;
+optional bool vertical_only = 8;
+optional uint32 title_id = 9;
+optional bool start_from_right = 10;
+optional string region = 11;
+optional bool horizontal_only = 12;
+}
+message Chapter {
+required uint32 title_id = 1;
+required uint32 chapter_id = 2;
+required string name = 3;
+required string subtitle = 4;
+required string thumbail_url = 5;
+required uint32 start_timestamp = 6;
+required uint32 end_timestamp = 7;
+optional bool viewed = 8;
+optional bool viewed_free = 11;
+optional bool vertical_only = 9;
+optional bool horizontal_only = 12;
+optional uint32 chapter_ticket_end_time = 10;
+}
+
+
+message SNS {
+required string body = 1;
+required string url = 2;
+}
+
+message Page {
+optional MangaPage page = 1;
+optional BannerList banner_list = 2;
+optional BannerList insert_banner_list = 5;
+optional LastPage last_page = 3;
+optional AdNetworkList ads = 4;
+}
+message MangaPage {
+optional string image_url = 1;
+optional uint32 width = 2;
+optional uint32 height = 3;
+optional int32 type = 4;
+optional string encryption_key = 5;
+}
+
+message BannerList {
+optional string title = 1;
+repeated Banner banner = 2;
+}
+message Banner {
+required string image_url = 1;
+required TransitionAction action = 2;
+required uint32 id = 3;
+}
+message TransitionAction {
+required int32 method = 1;
+required string url = 2;
+}
+
+message LastPage {
+required Chapter current_chapter = 1;
+required Chapter next_chapter = 2;
+repeated Comment top_comments = 3;
+optional bool is_subscribed = 4;
+optional uint32 next_timestamp = 5;
+required int32 chapter_type = 6;
+optional AdNetworkList ads = 7;
+optional Popup popup = 8;
+repeated Banner banner = 9;
+repeated Title titles = 10;
+optional Banner publisher_banner = 11;
+optional UserTickets user_tickets = 12;
+optional bool is_next_chapter_read = 13;
+optional bool is_next_chapter_one_time_free = 14;
+optional FreeViewDialogue free_view_dialogue = 15;
+}
+message Comment {
+required uint32 id = 1;
+optional uint32 index = 2;
+required string username = 3;
+optional string icon = 4;
+optional bool is_my_comment = 6;
+optional bool liked = 7;
+required uint32 likes = 9;
+required string body = 10;
+required uint32 created = 11;
+}
+message Popup {
+required uint32 id = 5;
+required OSDefault os_def = 1;
+required AppDefault app_def = 2;
+required MovieReward movie_reward = 3;
+required OneImage one_image = 4;
+}
+message OSDefault {
+required string subject = 1;
+required string body = 2;
+optional Button ok_button = 3;
+optional Button neutral_button = 4;
+optional Button cancel_button = 5;
+required int32 language = 6;
+}
+message Button {
+required string text = 1;
+optional TransitionAction action = 2;
+}
+message AppDefault {
+required string subject = 1;
+required string body = 2;
+optional TransitionAction action = 3;
+optional string image_url = 4;
+}
+message MovieReward {
+required string image_url = 1;
+optional AdNetworkList ads = 2;
+}
+message OneImage {
+optional TransitionAction action = 1;
+optional string image_url = 2;
+}
+message UserTickets {
+required uint32 current_tickets = 1;
+required uint32 next_ticket_timestamp = 2;
+}
+
+message Title {
+required uint32 id = 1;
+required string name = 2;
+required string author = 3;
+optional string portrait_image = 4;
+optional string landscape_image = 5;
+required uint32 views = 6;
+required int32 language = 7;
+}
+message FreeViewDialogue {
+required int32 platform = 1;
+required string dialogue_url = 2;
+required Banner publisher_banner = 3;
+}
+
+message AdNetworkList {
+repeated AdNetwork ads = 1;
+}
+message AdNetwork {
+optional Facebook fb = 1;
+optional Admob admob = 2;
+optional Mopub mopub = 3;
+optional Adsense adsense = 4;
+optional Applovin applovin = 5;
+optional ApplovinMax applovin_max = 6;
+
+  message Facebook {
+    required string id = 1;
+  }
+  message Admob {
+    required string id = 1;
+    required string location = 2;
+  }
+  message Mopub {
+    required string id = 1;
+  }
+  message Adsense {
+    required string id = 1;
+  }
+  message Applovin {
+    required string id = 1;
+  }
+  message ApplovinMax {
+    required string id = 1;
+    required int32 type = 2;
+  }
+}
+
