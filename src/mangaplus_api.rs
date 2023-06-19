@@ -26,7 +26,7 @@ impl MangaPlusClient {
 
     fn _do_get(&self, url: String, params: &[(&str, &str)]) -> Result<Response, String> {
         if let Ok(final_url) = reqwest::Url::parse_with_params(&url, params) {
-            println!("{:?}", final_url);
+            //println!("{:?}", final_url);
             let res = Client::new()
                 .get(final_url)
                 .header("User-Agent", USER_AGENT)
@@ -102,7 +102,7 @@ impl MangaPlusClient {
         Err("".to_string())
     }
 
-    pub fn get_pages(&self, chapter_id: i32) -> Result<mangaplus_pb::MangaViewer, String> {
+    pub fn get_manga_viewer(&self, chapter_id: i32) -> Result<mangaplus_pb::MangaViewer, String> {
         let params = [("app_ver", VERSION), ("os_ver", OS_VERSION), ("os", OS_NAME), ("secret", self.device_secret.as_str()),
             ("chapter_id", &format!("{}", chapter_id)),
             ("split", "yes"),
@@ -129,5 +129,39 @@ impl MangaPlusClient {
         }
 
         Err("".to_string())
+    }
+
+    pub fn download_pages(&self, chapter_id: i32) -> Result<(mangaplus_pb::MangaViewer, Vec::<Vec::<u8>>), String> {
+        let mut pages_result: Vec::<Vec::<u8>> = Vec::new();
+        if let Ok(chapter) = self.get_manga_viewer(chapter_id) {
+            let pages = chapter.clone().pages;
+            for p in pages {
+                if let Some(manga_page) = p.page {
+                    //println!("{:?}", manga_page);
+                    if let Some(img_url) = manga_page.image_url {
+                        if let Ok(r) = self._do_get(img_url, &[]) {
+                            let body = r.bytes().unwrap();
+                            if let Some(key) = manga_page.encryption_key {
+                                pages_result.push(Self::decrypt_page(&body, &hex::decode(key).unwrap()));
+                            } else {
+                                pages_result.push(body.to_vec());
+                            }
+                        }
+                    }
+                }
+            }
+            //println!("--");
+            //println!("{:#?}", pages_result);
+            //println!("--");
+            return Ok((chapter, pages_result));
+        }
+        return Err("".to_string());
+    }
+    fn decrypt_page(page_bytes: &[u8], key: &[u8]) -> Vec::<u8> {
+        let mut dec_page = page_bytes.to_vec();
+        for (i,_) in page_bytes.to_vec().iter().enumerate() {
+            dec_page[i] ^= key[i%key.len()];
+        }
+        return dec_page;
     }
 }
